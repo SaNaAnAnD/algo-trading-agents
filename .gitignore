@@ -222,3 +222,4 @@ __marimo__/
 .venv/
 venv/
 outputs/
+*.bak

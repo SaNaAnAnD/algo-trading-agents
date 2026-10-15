@@ -1,0 +1,81 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "1. Trading SESSION (whole evening, every 15 min)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/run_session.py",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "python": "/home/ashok/anaconda3/envs/trading-agents/bin/python",
+      "justMyCode": true,
+      "env": {
+        "CREWAI_TRACING_ENABLED": "false"
+      }
+    },
+    {
+      "name": "2. Trading SESSION - first run right now",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/run_session.py",
+      "args": [
+        "--now"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "python": "/home/ashok/anaconda3/envs/trading-agents/bin/python",
+      "justMyCode": true,
+      "env": {
+        "CREWAI_TRACING_ENABLED": "false"
+      }
+    },
+    {
+      "name": "3. One run now (places orders)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/crew_ai/clients/trading_crew.py",
+      "args": [
+        "--auto"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "python": "/home/ashok/anaconda3/envs/trading-agents/bin/python",
+      "justMyCode": true,
+      "env": {
+        "CREWAI_TRACING_ENABLED": "false"
+      }
+    },
+    {
+      "name": "4. Practice run (no orders)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/crew_ai/clients/trading_crew.py",
+      "args": [
+        "--dry-run"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "python": "/home/ashok/anaconda3/envs/trading-agents/bin/python",
+      "justMyCode": true,
+      "env": {
+        "CREWAI_TRACING_ENABLED": "false"
+      }
+    },
+    {
+      "name": "5. Start MCP server only",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/servers/alpaca_trading_mcpServer.py",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "python": "/home/ashok/anaconda3/envs/trading-agents/bin/python",
+      "justMyCode": true,
+      "env": {
+        "CREWAI_TRACING_ENABLED": "false"
+      }
+    }
+  ]
+}

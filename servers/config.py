@@ -11,8 +11,8 @@ W_BREAKOUT = 0.10
 W_NEWS = 0.15
 
 # Buy/sell thresholds
-BUY_THRESHOLD_BULL = 65   # buy level when SPY is above its EMA50
-BUY_THRESHOLD_BEAR = 75   # stricter buy level when SPY is below its EMA50
+BUY_THRESHOLD_BULL = 62   # buy level when SPY is above its EMA50
+BUY_THRESHOLD_BEAR = 70   # stricter buy level when SPY is below its EMA50
 ADD_THRESHOLD = 80        # add more to a stock you already hold
 SELL_THRESHOLD = 40       # sell below this score
 

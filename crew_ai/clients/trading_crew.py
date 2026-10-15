@@ -27,6 +27,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastmcp import Client
 from crewai import Agent, Task, Crew, Process, LLM
+from trading_safety import protective_stop, safe_buy_quantity
 
 load_dotenv()
 
@@ -80,6 +81,23 @@ SETTINGS = {
     "NEWS_HEADLINES": read_setting("NEWS_HEADLINES", 3, int, lambda value: value >= 0),
     "EXTENDED_HOURS": read_setting("EXTENDED_HOURS", True, parse_bool),
     "LLM_RETRIES": read_setting("LLM_RETRIES", 3, int, lambda value: value >= 0),
+    "MAX_TRADE_RISK_FRACTION": read_setting(
+        "MAX_TRADE_RISK_FRACTION", 0.015, parse_finite_float,
+        lambda value: 0 < value <= 0.05),
+    "MAX_POSITION_FRACTION": read_setting(
+        "MAX_POSITION_FRACTION", 0.12, parse_finite_float,
+        lambda value: 0 < value <= 1),
+    "MAX_HIGH_BETA_POSITION_FRACTION": read_setting(
+        "MAX_HIGH_BETA_POSITION_FRACTION", 0.08, parse_finite_float,
+        lambda value: 0 < value <= 1),
+    "PROTECTIVE_STOP_FRACTION": read_setting(
+        "PROTECTIVE_STOP_FRACTION", 0.06, parse_finite_float,
+        lambda value: 0 < value < 1),
+}
+HIGH_BETA_SYMBOLS = {
+    symbol.strip().upper()
+    for symbol in os.getenv("HIGH_BETA_SYMBOLS", "MU,XYZ,HOOD,SMCI").split(",")
+    if symbol.strip()
 }
 
 llm = LLM(
@@ -219,7 +237,28 @@ def build_plan(final, positions, account, settings):
             reason = f"RAMS {stock.get('rams')} strong and position in profit"
         else:
             continue
-        qty = min(qty, int(budget // price))
+        # Apply deterministic risk and position limits before proposing a buy.
+        try:
+            stop_price = protective_stop(
+                price, settings.get("PROTECTIVE_STOP_FRACTION", 0.06)
+            )
+        except (TypeError, ValueError):
+            continue
+
+        current_value = (
+            number(held[symbol].get("market_value")) if symbol in held else 0.0
+        )
+        safe_qty = safe_buy_quantity(
+            price=price,
+            stop_price=stop_price,
+            equity=equity,
+            current_position_value=current_value,
+            high_beta=symbol in HIGH_BETA_SYMBOLS,
+            max_risk_fraction=settings.get("MAX_TRADE_RISK_FRACTION", 0.015),
+            max_position_fraction=settings.get("MAX_POSITION_FRACTION", 0.12),
+            high_beta_fraction=settings.get("MAX_HIGH_BETA_POSITION_FRACTION", 0.08),
+        )
+        qty = min(qty, safe_qty, int(budget // price))
         if qty <= 0:
             continue
         buys.append({
@@ -310,7 +349,19 @@ def settings_report(timestamp, flags, symbols, regime, buy_threshold):
 
 def main():
     auto = "--auto" in sys.argv
-    dry_run = "--dry-run" in sys.argv
+    dry_run_setting = os.getenv("DRY_RUN", "true").strip().lower()
+    trading_enabled = os.getenv("TRADING_ENABLED", "false").strip().lower() == "true"
+
+    # Fail closed: explicit CLI dry-run or environment safety settings block orders.
+    dry_run = (
+        "--dry-run" in sys.argv
+        or dry_run_setting != "false"
+        or not trading_enabled
+    )
+    if not trading_enabled:
+        print("SAFETY: TRADING_ENABLED is not true; orders are disabled.")
+    elif dry_run:
+        print("SAFETY: DRY_RUN is enabled; no orders will be placed.")
     flags = [flag for flag, enabled in (("--auto", auto), ("--dry-run", dry_run)) if enabled]
     now = datetime.now()
     timestamp = now.strftime("%d%m%Y-%H-%M")
@@ -525,8 +576,6 @@ def main():
                 execution_entries.append(line + " - DECLINED by user")
                 continue
             try:
-                if order["side"] == "sell":
-                    mcp("cancel_all_orders", {"symbol": order["symbol"]})
                 result = mcp("place_limit_order", {
                     "symbol": order["symbol"], "side": order["side"],
                     "qty": int(order["qty"]), "limit_price": limit_price(order),

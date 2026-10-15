@@ -3,6 +3,7 @@
 #   get_bars_multi, compute_rams, get_news, place_limit_order, get_all_positions
 
 import os
+import math
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -10,8 +11,10 @@ import pandas_ta as ta
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 from alpaca.trading.client import TradingClient
-from alpaca.trading.requests import MarketOrderRequest, LimitOrderRequest
-from alpaca.trading.enums import OrderSide, TimeInForce
+from alpaca.trading.requests import (
+    MarketOrderRequest, LimitOrderRequest, StopLossRequest
+)
+from alpaca.trading.enums import OrderSide, TimeInForce, OrderClass
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.historical.news import NewsClient
 from alpaca.data.requests import StockBarsRequest, NewsRequest
@@ -21,6 +24,15 @@ from alpaca.data.enums import DataFeed
 import config
 
 load_dotenv()
+
+
+def _require_trading_enabled():
+    """Fail closed: block new orders unless explicitly enabled."""
+    if os.getenv("TRADING_ENABLED", "false").strip().lower() != "true":
+        raise ValueError(
+            "Trading is disabled. Set TRADING_ENABLED=true in the selected "
+            "environment file only after all safety checks pass."
+        )
 
 mcp = FastMCP("alpaca-paper-trading")
 
@@ -43,6 +55,95 @@ def _order_to_dict(order) -> dict:
         "status": str(order.status),
         "submitted_at": str(order.submitted_at),
     }
+
+
+
+def _validate_order_request(symbol, side, qty, reference_price=None):
+    """Reject unsafe orders before they reach Alpaca."""
+    symbol = str(symbol).strip().upper()
+    side = str(side).strip().lower()
+
+    if not symbol or not symbol.isalnum():
+        raise ValueError("Invalid stock symbol.")
+    if side not in {"buy", "sell"}:
+        raise ValueError("Order side must be 'buy' or 'sell'.")
+
+    try:
+        quantity = float(qty)
+    except (TypeError, ValueError):
+        raise ValueError("Quantity must be a positive whole number.") from None
+
+    if not math.isfinite(quantity) or quantity <= 0 or not quantity.is_integer():
+        raise ValueError("Quantity must be a positive whole number.")
+
+    positions = _trading_client.get_all_positions()
+    held = next((p for p in positions if p.symbol.upper() == symbol), None)
+    held_qty = float(held.qty) if held is not None else 0.0
+
+    if side == "sell":
+        if quantity > held_qty:
+            raise ValueError(
+                f"Sell rejected: requested {quantity:g} shares, "
+                f"but only {held_qty:g} are held."
+            )
+        return symbol, int(quantity)
+
+    # Buy orders require a reference price so the server can size risk.
+    try:
+        price = float(reference_price)
+    except (TypeError, ValueError):
+        raise ValueError(
+            "Buy rejected: a valid reference price is required."
+        ) from None
+    if not math.isfinite(price) or price <= 0:
+        raise ValueError("Buy rejected: reference price must be positive.")
+
+    account = _trading_client.get_account()
+    equity = float(account.equity)
+    if not math.isfinite(equity) or equity <= 0:
+        raise ValueError("Buy rejected: account equity is unavailable.")
+
+    current_value = float(held.market_value) if held is not None else 0.0
+    if not math.isfinite(current_value) or current_value < 0:
+        raise ValueError("Buy rejected: current position value is invalid.")
+
+    try:
+        risk_fraction = float(os.getenv("MAX_TRADE_RISK_FRACTION", "0.015"))
+        normal_cap = float(os.getenv("MAX_POSITION_FRACTION", "0.12"))
+        high_beta_cap = float(os.getenv("MAX_HIGH_BETA_POSITION_FRACTION", "0.08"))
+        stop_fraction = float(os.getenv("PROTECTIVE_STOP_FRACTION", "0.06"))
+    except ValueError:
+        raise ValueError("Buy rejected: invalid risk configuration.") from None
+
+    if not (
+        math.isfinite(risk_fraction) and 0 < risk_fraction <= 0.05
+        and math.isfinite(normal_cap) and 0 < normal_cap <= 1
+        and math.isfinite(high_beta_cap) and 0 < high_beta_cap <= 1
+        and math.isfinite(stop_fraction) and 0 < stop_fraction < 1
+    ):
+        raise ValueError("Buy rejected: risk configuration is outside safe bounds.")
+
+    high_beta_symbols = {
+        item.strip().upper()
+        for item in os.getenv("HIGH_BETA_SYMBOLS", "MU,XYZ,HOOD,SMCI").split(",")
+        if item.strip()
+    }
+    cap_fraction = high_beta_cap if symbol in high_beta_symbols else normal_cap
+
+    risk_per_share = price * stop_fraction
+    risk_qty = math.floor((equity * risk_fraction) / risk_per_share)
+    exposure_qty = math.floor(
+        max(0.0, equity * cap_fraction - current_value) / price
+    )
+    max_qty = min(risk_qty, exposure_qty)
+
+    if quantity > max_qty:
+        raise ValueError(
+            f"Buy rejected: requested {int(quantity)} shares, "
+            f"server risk limits allow at most {max_qty}."
+        )
+
+    return symbol, int(quantity)
 
 
 def _fetch_bars(symbols):
@@ -289,26 +390,124 @@ def get_news(symbol: str, limit: int = 5) -> dict:
         return {"symbol": symbol.upper(), "headlines": [], "error": str(e)}
 
 
+def _release_orders_for_sell(symbol):
+    """Cancel every open order of this one stock before selling it.
+
+    The protective stop leg of an OTO buy reserves the shares, so Alpaca
+    rejects any other sell of them. Returns that stop's price (if there was
+    one) so the remaining shares can be protected again after the sell.
+    """
+    import time as _time
+    old_stop = None
+    try:
+        orders = [o for o in _trading_client.get_orders()
+                  if str(getattr(o, "symbol", "")).upper() == symbol]
+    except Exception:
+        return None
+    for o in orders:
+        sp = getattr(o, "stop_price", None)
+        if sp is not None and str(getattr(o, "side", "")).lower().endswith("sell"):
+            try:
+                old_stop = float(sp)
+            except (TypeError, ValueError):
+                pass
+        try:
+            _trading_client.cancel_order_by_id(o.id)
+        except Exception:
+            pass
+    if orders:
+        for _ in range(20):   # wait up to ~10 s for the cancels to settle
+            try:
+                left = [o for o in _trading_client.get_orders()
+                        if str(getattr(o, "symbol", "")).upper() == symbol]
+            except Exception:
+                break
+            if not left:
+                break
+            _time.sleep(0.5)
+    return old_stop
+
+
+def _protect_rest(symbol, sold_qty, stop_price):
+    """Put the protective stop back on the shares that were not sold."""
+    if stop_price is None:
+        return
+    try:
+        from alpaca.trading.requests import StopOrderRequest
+        held = int(float(_trading_client.get_open_position(symbol).qty))
+        rest = held - int(sold_qty)
+        if rest > 0:
+            _trading_client.submit_order(StopOrderRequest(
+                symbol=symbol, qty=rest, side=OrderSide.SELL,
+                time_in_force=TimeInForce.GTC, stop_price=round(stop_price, 2)))
+    except Exception as e:  # never fail the sell because of the re-protect
+        print(f"re-protect {symbol} skipped: {e}")
+
+
 @mcp.tool()
 def place_limit_order(symbol: str, side: str, qty: int, limit_price: float,
                       extended_hours: bool = False) -> dict:
-    """Place a PAPER-trading LIMIT order (use this outside regular market hours).
+    """Place a validated PAPER-trading LIMIT order."""
+    _require_trading_enabled()
+    try:
+        price = float(limit_price)
+    except (TypeError, ValueError):
+        raise ValueError("Limit price must be positive and finite.") from None
+    if not math.isfinite(price) or price <= 0:
+        raise ValueError("Limit price must be positive and finite.")
 
-    Args:
-        symbol: Ticker, e.g. "AAPL".
-        side: "buy" or "sell".
-        qty: Whole number of shares.
-        limit_price: Highest price to pay (buy) or lowest to accept (sell).
-        extended_hours: True to allow pre-market / after-hours trading.
-    """
-    req = LimitOrderRequest(
-        symbol=symbol.upper(),
-        qty=int(qty),
-        side=OrderSide.BUY if side.lower() == "buy" else OrderSide.SELL,
-        time_in_force=TimeInForce.DAY,
-        limit_price=round(float(limit_price), 2),
-        extended_hours=extended_hours,
+    normalized_side = str(side).strip().lower()
+    symbol, quantity = _validate_order_request(
+        symbol, normalized_side, qty,
+        reference_price=price if normalized_side == "buy" else None,
     )
+    if normalized_side == "buy":
+        if extended_hours:
+            raise ValueError(
+                "OTO buy orders are restricted to regular market hours."
+            )
+
+        try:
+            stop_fraction = float(
+                os.getenv("PROTECTIVE_STOP_FRACTION", "0.06")
+            )
+        except (TypeError, ValueError):
+            raise ValueError("Invalid PROTECTIVE_STOP_FRACTION.") from None
+
+        if not math.isfinite(stop_fraction) or not 0 < stop_fraction < 1:
+            raise ValueError("PROTECTIVE_STOP_FRACTION must be between 0 and 1.")
+
+        rounded_limit = round(price, 2)
+        stop_price = round(rounded_limit * (1 - stop_fraction), 2)
+
+        if stop_price <= 0 or rounded_limit - stop_price < 0.01:
+            raise ValueError("Calculated stop price is invalid or too close to the limit.")
+
+        req = LimitOrderRequest(
+            symbol=symbol,
+            qty=quantity,
+            side=OrderSide.BUY,
+            time_in_force=TimeInForce.DAY,
+            limit_price=rounded_limit,
+            order_class=OrderClass.OTO,
+            stop_loss=StopLossRequest(stop_price=stop_price),
+            extended_hours=False,
+        )
+    else:
+        req = LimitOrderRequest(
+            symbol=symbol,
+            qty=quantity,
+            side=OrderSide.SELL,
+            time_in_force=TimeInForce.DAY,
+            limit_price=round(price, 2),
+            extended_hours=extended_hours,
+        )
+
+    if normalized_side == "sell":
+        _old_stop = _release_orders_for_sell(symbol)
+        _sell = _trading_client.submit_order(req)
+        _protect_rest(symbol, quantity, _old_stop)
+        return _order_to_dict(_sell)
     return _order_to_dict(_trading_client.submit_order(req))
 
 
@@ -337,18 +536,37 @@ def get_all_positions() -> dict:
 
 @mcp.tool()
 def buy_stock(symbol: str, qty: float) -> dict:
-    """Place a PAPER-trading market BUY order on Alpaca."""
-    order_request = MarketOrderRequest(
-        symbol=symbol.upper(), qty=qty, side=OrderSide.BUY, time_in_force=TimeInForce.DAY,
+    """Market buys are disabled; use a validated limit buy instead."""
+    raise ValueError(
+        "Market buys are disabled because they lack a bounded reference price. "
+        "Use place_limit_order with a valid limit price."
     )
-    return _order_to_dict(_trading_client.submit_order(order_request))
 
 
 @mcp.tool()
 def sell_stock(symbol: str, qty: float) -> dict:
-    """Place a PAPER-trading market SELL order on Alpaca."""
+    """Place a market SELL only when no open orders exist for the symbol."""
+    _require_trading_enabled()
+    symbol, quantity = _validate_order_request(symbol, "sell", qty)
+
+    # Fail closed: don't risk a stale protective stop or conflicting exit order.
+    open_orders = _trading_client.get_orders()
+    symbol_orders = [
+        order for order in open_orders
+        if str(getattr(order, "symbol", "")).upper() == symbol
+    ]
+    if symbol_orders:
+        order_ids = [str(getattr(order, "id", "unknown")) for order in symbol_orders]
+        raise ValueError(
+            f"Sell blocked for {symbol}: open order(s) {order_ids} exist. "
+            "Review and reconcile these orders before selling."
+        )
+
     order_request = MarketOrderRequest(
-        symbol=symbol.upper(), qty=qty, side=OrderSide.SELL, time_in_force=TimeInForce.DAY,
+        symbol=symbol,
+        qty=quantity,
+        side=OrderSide.SELL,
+        time_in_force=TimeInForce.DAY,
     )
     return _order_to_dict(_trading_client.submit_order(order_request))
 
@@ -379,14 +597,40 @@ def get_open_orders(symbol: str = "") -> dict:
 
 @mcp.tool()
 def cancel_all_orders(symbol: str = "") -> dict:
-    """Cancel all open orders, optionally restricted to one symbol."""
+    """Cancel ordinary open orders, preserving identified protective orders."""
+    orders = _trading_client.get_orders()
     if symbol:
-        matching = [o for o in _trading_client.get_orders() if o.symbol.upper() == symbol.upper()]
-        for o in matching:
-            _trading_client.cancel_order_by_id(o.id)
-        return {"cancelled_count": len(matching), "symbol": symbol.upper()}
-    _trading_client.cancel_orders()
-    return {"cancelled": "all open orders"}
+        wanted = symbol.strip().upper()
+        orders = [o for o in orders if o.symbol.upper() == wanted]
+
+    cancelled = []
+    preserved = []
+    for order in orders:
+        order_type = str(getattr(order, "order_type", "")).lower()
+        order_class = str(getattr(order, "order_class", "")).lower()
+        has_stop_price = getattr(order, "stop_price", None) is not None
+        has_trail = getattr(order, "trail_percent", None) is not None
+
+        protective = (
+            "stop" in order_type
+            or "trailing" in order_type
+            or order_class in {"bracket", "oco", "oto"}
+            or has_stop_price
+            or has_trail
+        )
+        if protective:
+            preserved.append(str(order.id))
+            continue
+
+        _trading_client.cancel_order_by_id(order.id)
+        cancelled.append(str(order.id))
+
+    return {
+        "cancelled_count": len(cancelled),
+        "cancelled_order_ids": cancelled,
+        "preserved_protective_order_ids": preserved,
+        "symbol": symbol.strip().upper() if symbol else "",
+    }
 
 
 @mcp.tool()

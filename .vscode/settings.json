@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "/home/ashok/anaconda3/envs/trading-agents/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.autopilot.bak": true
+  }
+}

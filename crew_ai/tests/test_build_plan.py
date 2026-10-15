@@ -65,7 +65,7 @@ def test_buy_within_budget_without_positions():
     plan = build_plan(final, {"positions": []}, account(), SETTINGS)
     assert len(plan) == 1
     assert plan[0]["side"] == "buy"
-    assert plan[0]["qty"] == 9
+    assert plan[0]["qty"] == 1  # 12% of $1,000 allows one $100 share
     assert plan[0]["qty"] * plan[0]["price"] <= SETTINGS["TARGET_INVESTED"] * 1000
 
 
@@ -81,7 +81,7 @@ def test_planned_sells_increase_buy_budget():
     plan = build_plan(final, positions, account(cash=0), constrained)
     buys = [order for order in plan if order["side"] == "buy"]
     assert len(buys) == 1
-    assert buys[0]["qty"] == 4
+    assert buys[0]["qty"] == 1  # Position cap limits the $100 purchase
     assert sum(order["qty"] * order["price"] for order in plan
                if order["side"] == "sell") == 400
 
