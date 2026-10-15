@@ -67,6 +67,16 @@ above -0.25, no SELL signal), weighted by RAMS, at most 27% per stock and 15% pe
 high-beta stock, never adding to a losing position. With few healthy stocks the
 caps bind and the remainder stays in cash rather than going into falling stocks.
 
+**Run interval (16 Oct).** The session interval was changed from 15 to 45 minutes
+(about 8 runs per evening): fewer, more deliberate decisions for a careful investor,
+less churn from short-term noise, and well inside the free Groq daily token quota.
+
+**AI availability.** The agents use a chain of free models: Groq gpt-oss-120b, then
+gpt-oss-20b, qwen and llama-3.3-70b (each with its own daily quota), then OpenRouter
+and the college Ollama server when configured. A model that reaches its daily limit
+is skipped until the next day. If no model is available, the run continues with the
+rule-based plan, so exits and allocation still happen.
+
 **Records.** Every run appends a line to `crew_ai/outputs/session_log.txt`
 (equity, change since the $100,000 start, % invested, cash, positions). At the end
 of each session `crew_ai/outputs/daily_summary_<date>.md` lists the start and end

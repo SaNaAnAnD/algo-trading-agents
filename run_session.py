@@ -8,7 +8,7 @@ Autonomous trading session (one command for the whole evening):
 - Starts the Alpaca MCP server in the background if it is not already running
   (its log goes to crew_ai/outputs/server_log.txt).
 - Waits for the US market open (times shown in IST), first run 10 minutes
-  after the open, then runs the full crew in --auto mode every 15 minutes:
+  after the open, then runs the full crew in --auto mode every 45 minutes:
   market data, news and technical agents, RAMS scores, Risk Manager and
   Trader, then the orders - with no questions asked.
 - No new run in the last 10 minutes; stops by itself after the close.
@@ -54,6 +54,7 @@ def log(text: str) -> None:
 
 
 START_EQUITY = 100_000.0   # contest starting capital
+EVERY_MIN = 45             # minutes between runs (set from --every)
 
 
 def snapshot(tc):
@@ -85,7 +86,7 @@ def daily_summary(tc, first, last, runs, started_utc):
     from alpaca.trading.enums import QueryOrderStatus
     day = started_utc   # the US trading day (the session ends after midnight IST)
     lines = [f"# Trading session {day:%d %b %Y} (US market day)", "",
-             f"Runs: {runs} (one every 15 minutes, full CrewAI crew in auto mode)", ""]
+             f"Runs: {runs} (one every {EVERY_MIN} minutes, full CrewAI crew in auto mode)", ""]
     if first and last:
         change = last["equity"] - first["equity"]
         lines += ["| | Start of session | End of session |", "|---|---|---|",
@@ -189,14 +190,16 @@ def run_crew(n: int) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--every", type=int, default=15, help="minutes between runs (default 15)")
+    ap.add_argument("--every", type=int, default=45, help="minutes between runs (default 45)")
     ap.add_argument("--now", action="store_true", help="first run immediately if the market is open")
     ap.add_argument("--no-save", action="store_true", help="do not commit and push to GitHub at the end")
     a = ap.parse_args()
     if os.getenv("TRADING_ENABLED", "").lower() != "true" or os.getenv("DRY_RUN", "").lower() != "false":
         print("NOTE: .env has TRADING_ENABLED/DRY_RUN set so that no orders are placed (dry run).")
     tc = TradingClient(os.environ["ALPACA_API_KEY"], os.environ["ALPACA_SECRET_KEY"], paper=True)
-    every = timedelta(minutes=max(10, a.every))
+    global EVERY_MIN
+    EVERY_MIN = max(10, a.every)
+    every = timedelta(minutes=EVERY_MIN)
     print("=" * 70)
     print(f" Autonomous trading session | a run every {every.seconds // 60} min | Ctrl + C to stop")
     print("=" * 70)

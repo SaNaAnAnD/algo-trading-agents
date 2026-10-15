@@ -10,6 +10,9 @@ STOP_ATR (2.5, above 0), TAKE_PROFIT_ATR (3.0, above 0),
 LIMIT_BUFFER (0.003), MAX_RPM (20), NEWS_HEADLINES (3),
 EXTENDED_HOURS (false), CREW_VERBOSE (true), LLM_RETRIES (1) and LLM_BACKUP_MODELS
 (comma list, tried in order when the main model fails or hits its daily limit).
+Extra free fallbacks, used when set: OPENROUTER_API_KEY (+ OPENROUTER_MODEL) and
+OLLAMA_URL + OLLAMA_MODEL (e.g. the college Ollama server). If every model is
+unavailable the run continues with the rule-based plan, so trading never stops.
 """
 
 import os
@@ -115,6 +118,10 @@ HIGH_BETA_SYMBOLS = {
 }
 
 def make_llm(model):
+    if model.startswith("openrouter/"):
+        return LLM(model=model, api_key=os.getenv("OPENROUTER_API_KEY"), temperature=0.2)
+    if model.startswith("ollama/"):
+        return LLM(model=model, base_url=os.getenv("OLLAMA_URL"), temperature=0.2, timeout=300)
     return LLM(model=model, api_key=os.getenv("GROQ_API_KEY"), temperature=0.2)
 
 
@@ -123,7 +130,36 @@ def make_llm(model):
 MODELS = [SETTINGS["LLM_MODEL"]] + [
     m.strip() for m in SETTINGS["LLM_BACKUP_MODELS"].split(",")
     if m.strip() and m.strip() != SETTINGS["LLM_MODEL"]]
-DEAD_MODELS = set()
+if os.getenv("OPENROUTER_API_KEY"):
+    MODELS.append("openrouter/" + os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free"))
+if os.getenv("OLLAMA_URL") and os.getenv("OLLAMA_MODEL"):
+    MODELS.append("ollama/" + os.getenv("OLLAMA_MODEL"))
+
+# Models that used up their free daily quota are skipped until the next UTC day.
+LIMITS_FILE = PROJECT / "outputs" / "llm_daily_limits.json"
+
+
+def _today():
+    return datetime.utcnow().strftime("%Y-%m-%d")
+
+
+def load_daily_limits():
+    try:
+        data = json.loads(LIMITS_FILE.read_text())
+        return set(data.get(_today(), []))
+    except (OSError, ValueError, AttributeError):
+        return set()
+
+
+def mark_daily_limit(model):
+    try:
+        LIMITS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        LIMITS_FILE.write_text(json.dumps({_today(): sorted(load_daily_limits() | {model})}))
+    except OSError:
+        pass
+
+
+DEAD_MODELS = load_daily_limits()
 llm = make_llm(MODELS[0])
 
 
@@ -438,6 +474,11 @@ def parse_json_answer(text):
     return None, False
 
 
+def model_chain_text():
+    usable = [m for m in MODELS if m not in DEAD_MODELS]
+    return " -> ".join(usable + ["rule-based plan"])
+
+
 def run_crew(crew):
     """Run a Crew, falling back through the backup models.
 
@@ -461,8 +502,8 @@ def run_crew(crew):
             except Exception as error:
                 message = str(error)
                 lowered = message.lower()
-                daily = ("per day" in lowered or "tpd" in lowered or "rpd" in lowered
-                         or "model_not_found" in lowered or "does not exist" in lowered
+                quota = "per day" in lowered or "tpd" in lowered or "rpd" in lowered
+                daily = (quota or "model_not_found" in lowered or "does not exist" in lowered
                          or "decommissioned" in lowered or "invalid api key" in lowered)
                 short_limit = "429" in message or "rate" in lowered
                 if short_limit and not daily and attempt < SETTINGS["LLM_RETRIES"]:
@@ -471,6 +512,8 @@ def run_crew(crew):
                     continue
                 print(f"LLM {model} unavailable ({message[:120]}); trying the next model.")
                 DEAD_MODELS.add(model)
+                if quota:
+                    mark_daily_limit(model)
                 break
     print("All AI models unavailable this run; using the rule-based plan.")
     return False
@@ -540,6 +583,7 @@ def main():
     run_status = "Run ended before orders were selected."
     try:
         symbols = load_symbols()
+        print(f"AI models today: {model_chain_text()}")
         print(f"\n[1/5] Fetching data for {len(symbols)} stocks from the MCP server...")
         try:
             account = mcp("get_account_info")
