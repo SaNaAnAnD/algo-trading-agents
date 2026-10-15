@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "clients"))
-from trading_crew import build_plan
+from trading_crew import build_plan, buy_veto_evidence
 
 
 SETTINGS = {
@@ -135,7 +135,47 @@ def test_pending_buy_not_bought_twice():
     assert plan == []
 
 
-TESTS += [test_profit_taken_only_once_then_breakeven, test_pending_buy_not_bought_twice]
+
+def test_buy_veto_needs_evidence():
+    order = {"symbol": "XYZ", "side": "buy", "rsi": 69.9}
+    assert buy_veto_evidence(order, {"XYZ": 0.0}) == ""
+    assert "bad news" in buy_veto_evidence(order, {"XYZ": -0.5})
+    assert "overbought" in buy_veto_evidence(dict(order, rsi=83), {"XYZ": 0.2})
+
+
+
+CAREFUL = {**SETTINGS, "ALLOCATION": "careful", "TARGET_INVESTED": 0.80,
+           "MAX_POSITION_FRACTION": 0.27, "MAX_HIGH_BETA_POSITION_FRACTION": 0.15,
+           "MAX_TRADE_RISK_FRACTION": 0.017}
+
+
+def test_careful_invests_only_healthy_and_keeps_cash():
+    final = {"stocks": [
+        stock("V", "HOLD", price=400, atr=2, rams=75.6, trend=100, news_points=65),
+        stock("XYZ", "BUY", price=80, atr=1, rams=70.3, trend=50, news_points=50),
+        stock("GE", "WAIT", price=200, atr=2, rams=55.1, trend=25, news_points=70),
+        stock("AMZN", "WAIT", price=200, atr=2, rams=32.3, trend=25, news_points=65),
+        stock("MU", "WAIT", price=100, atr=2, rams=60, trend=0, news_points=50),
+        stock("BADNEWS", "WAIT", price=100, atr=2, rams=65, trend=50, news_points=20),
+    ]}
+    plan = build_plan(final, {"positions": []}, account(equity=100000, cash=100000), CAREFUL)
+    bought = {o["symbol"]: o["qty"] * o["price"] for o in plan if o["side"] == "buy"}
+    assert set(bought) == {"V", "XYZ", "GE"}           # weak, falling and bad-news names skipped
+    assert bought["XYZ"] <= 15000                       # high-beta cap 15%
+    assert all(v <= 27000 for v in bought.values())    # 27% cap
+    assert sum(bought.values()) <= 80000                # at least 20% stays in cash
+
+
+def test_careful_does_not_add_to_a_loser():
+    final = {"stocks": [stock("V", "HOLD", price=380, atr=10, rams=75, trend=100, news_points=50)]}
+    positions = {"positions": [position("V", qty=15, entry=390, value=5700, unrealized=-150)]}
+    plan = build_plan(final, positions, account(equity=100000, cash=94000), CAREFUL)
+    assert plan == []
+
+
+TESTS += [test_profit_taken_only_once_then_breakeven, test_pending_buy_not_bought_twice,
+          test_buy_veto_needs_evidence, test_careful_invests_only_healthy_and_keeps_cash,
+          test_careful_does_not_add_to_a_loser]
 
 
 if __name__ == "__main__":

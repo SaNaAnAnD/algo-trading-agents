@@ -223,3 +223,8 @@ __marimo__/
 venv/
 outputs/
 *.bak
+
+# Run records (reports for the professor) are kept in git; the server's
+# technical log is not.
+!crew_ai/outputs/
+crew_ai/outputs/server_log.txt

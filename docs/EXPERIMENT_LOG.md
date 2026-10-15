@@ -49,4 +49,26 @@ account in cash. *Change:* caps of 20% per stock and 15% for the high-beta stock
 MU, XYZ, HOOD and SMCI, still with the 6% protective stop on every buy (at most
 about 1.2% of equity at risk per position).
 
-Run-by-run results: `crew_ai/outputs/session_log.txt` and `crew_ai/outputs/run_*`.
+
+**Observed problem 8 - AI veto without evidence (23:55 IST).** The Risk Manager
+rejected the XYZ buy (RAMS 70.3, RSI 69.9, news 0.0) on the grounds that a RAMS
+score above the buy level meant the stock was overbought, which misreads RAMS
+(a strength score where higher is better). The Trader followed it and no buy was
+placed. *Change:* the Risk Manager now receives each buy's RSI and news score with
+explicit definitions (overbought = RSI 80 or more; very bad news = news score
+-0.25 or lower). A buy that passed every rule is skipped only with such evidence;
+otherwise it is kept and the overruled veto is logged.
+
+**Observed problem 9 - cash left idle.** Only stocks above the buy level (70 in a
+bear regime) were bought, so about 94% of the account stayed in cash. *Change:*
+careful allocation. 20% of equity always stays in cash; the other 80% is spread
+across healthy stocks only (RAMS 50 or more, trend pillar 25 or more, news score
+above -0.25, no SELL signal), weighted by RAMS, at most 27% per stock and 15% per
+high-beta stock, never adding to a losing position. With few healthy stocks the
+caps bind and the remainder stays in cash rather than going into falling stocks.
+
+**Records.** Every run appends a line to `crew_ai/outputs/session_log.txt`
+(equity, change since the $100,000 start, % invested, cash, positions). At the end
+of each session `crew_ai/outputs/daily_summary_<date>.md` lists the start and end
+equity, every order of the day and the final positions, and the records are
+committed to GitHub. Agent reports for every run are in `crew_ai/outputs/run_*`.

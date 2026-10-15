@@ -72,8 +72,16 @@ def parse_finite_float(value):
 SETTINGS = {
     "MCP_URL": read_setting("MCP_URL", "http://localhost:8001/mcp", str),
     "LLM_MODEL": read_setting("LLM_MODEL", "groq/openai/gpt-oss-120b", str),
-    "TARGET_INVESTED": read_setting("TARGET_INVESTED", 0.95, parse_finite_float,
+    "TARGET_INVESTED": read_setting("TARGET_INVESTED", 0.80, parse_finite_float,
                                     lambda value: 0 <= value <= 1),
+    # "careful": spread TARGET_INVESTED over healthy stocks only (rest stays cash);
+    # "signal": the original rule (buy only on a BUY / ADD signal).
+    "ALLOCATION": read_setting("ALLOCATION", "careful", str,
+                               lambda value: value in ("careful", "signal")),
+    "HEALTHY_MIN_RAMS": read_setting("HEALTHY_MIN_RAMS", 50.0, parse_finite_float),
+    "HEALTHY_MIN_TREND": read_setting("HEALTHY_MIN_TREND", 25.0, parse_finite_float),
+    "MIN_TRADE_FRACTION": read_setting("MIN_TRADE_FRACTION", 0.02, parse_finite_float,
+                                       lambda value: 0 <= value < 1),
     "STOP_ATR": read_setting("STOP_ATR", 2.5, parse_finite_float, lambda value: value > 0),
     "TAKE_PROFIT_ATR": read_setting("TAKE_PROFIT_ATR", 3.0, parse_finite_float,
                                     lambda value: value > 0),
@@ -184,6 +192,52 @@ def number(value, default=0.0):
         return default
 
 
+def capped_split(scores, total, caps):
+    """Split `total` in proportion to `scores`, no name above its cap.
+
+    Money a capped name cannot take is shared among the others.
+    """
+    alloc, left, remaining = {}, dict(scores), total
+    while left:
+        weight = sum(left.values())
+        if weight <= 0:
+            break
+        over = [k for k, v in left.items() if remaining * v / weight >= caps[k]]
+        if not over:
+            for k, v in left.items():
+                alloc[k] = remaining * v / weight
+            break
+        for k in over:
+            alloc[k] = caps[k]
+            remaining -= caps[k]
+            del left[k]
+    return alloc
+
+
+def healthy_targets(info, held, equity, settings, skip):
+    """Target value per healthy stock (careful mode).
+
+    Healthy = RAMS at least HEALTHY_MIN_RAMS, trend pillar at least
+    HEALTHY_MIN_TREND (not in a downtrend), news not bad, no SELL signal.
+    TARGET_INVESTED of equity is spread over them by RAMS, each capped at
+    MAX_POSITION_FRACTION (high-beta: MAX_HIGH_BETA_POSITION_FRACTION).
+    With few healthy stocks the caps bind and the rest stays in cash.
+    """
+    scores, caps = {}, {}
+    for symbol, stock in info.items():
+        if symbol in skip:
+            continue
+        news = number(stock.get("news_points"), 50.0) / 50.0 - 1.0
+        if (number(stock.get("rams")) >= settings.get("HEALTHY_MIN_RAMS", 50.0)
+                and number(stock.get("trend")) >= settings.get("HEALTHY_MIN_TREND", 25.0)
+                and news > -0.25 and stock.get("signal") != "SELL"):
+            scores[symbol] = number(stock.get("rams"))
+            frac = (settings.get("MAX_HIGH_BETA_POSITION_FRACTION", 0.08) if symbol in HIGH_BETA_SYMBOLS
+                    else settings.get("MAX_POSITION_FRACTION", 0.12))
+            caps[symbol] = frac * equity
+    return capped_split(scores, settings["TARGET_INVESTED"] * equity, caps)
+
+
 def build_plan(final, positions, account, settings, profit_taken=None, pending_buys=()):
     """Build orders from supplied data only; this function makes no network calls.
 
@@ -244,6 +298,39 @@ def build_plan(final, positions, account, settings, profit_taken=None, pending_b
     cash_budget = number(account.get("cash")) + planned_sell_value
     budget = max(0.0, min(target_budget, cash_budget))
     buys = []
+    if settings.get("ALLOCATION") == "careful":
+        targets = healthy_targets(info, held, equity, settings,
+                                  skip=planned_symbols | set(pending_buys))
+        for symbol, target in sorted(targets.items(), key=lambda kv: -kv[1]):
+            stock, price = info[symbol], number(info[symbol].get("price"))
+            current = number(held[symbol].get("market_value")) if symbol in held else 0.0
+            if symbol in held and number(held[symbol].get("unrealized_pl")) < 0:
+                continue   # careful: never add to a losing position
+            if price <= 0 or target - current < settings.get("MIN_TRADE_FRACTION", 0.02) * equity:
+                continue
+            try:
+                stop_price = protective_stop(price, settings.get("PROTECTIVE_STOP_FRACTION", 0.06))
+            except (TypeError, ValueError):
+                continue
+            safe_qty = safe_buy_quantity(
+                price=price, stop_price=stop_price, equity=equity,
+                current_position_value=current, high_beta=symbol in HIGH_BETA_SYMBOLS,
+                max_risk_fraction=settings.get("MAX_TRADE_RISK_FRACTION", 0.015),
+                max_position_fraction=settings.get("MAX_POSITION_FRACTION", 0.12),
+                high_beta_fraction=settings.get("MAX_HIGH_BETA_POSITION_FRACTION", 0.08))
+            qty = min(int((target - current) // price), safe_qty, int(budget // price))
+            if qty <= 0:
+                continue
+            buys.append({
+                "symbol": symbol, "side": "buy", "qty": qty, "price": price,
+                "rams": number(stock.get("rams")), "stop_loss": stock.get("stop_loss"),
+                "rsi": number(stock.get("rsi"), 50.0),
+                "reason": (f"healthy stock (RAMS {stock.get('rams')}, trend {stock.get('trend')}): "
+                           f"target {100 * target / equity:.0f}% of equity"),
+            })
+            planned_symbols.add(symbol)
+            budget -= qty * price
+        return sells + buys
     for stock in sorted(info.values(), key=lambda item: number(item.get("rams")), reverse=True):
         symbol = str(stock.get("symbol", "")).upper()
         price = number(stock.get("price"))
@@ -287,7 +374,7 @@ def build_plan(final, positions, account, settings, profit_taken=None, pending_b
         buys.append({
             "symbol": symbol, "side": "buy", "qty": qty, "price": price,
             "rams": number(stock.get("rams")), "stop_loss": stock.get("stop_loss"),
-            "reason": reason,
+            "rsi": number(stock.get("rsi"), 50.0), "reason": reason,
         })
         planned_symbols.add(symbol)
         budget -= qty * price
@@ -321,6 +408,20 @@ def task_text(task):
     """A task's answer, or '' when the AI did not run."""
     output = getattr(task, "output", None)
     return str(getattr(output, "raw", "") or "") if output is not None else ""
+
+
+VETO_NEWS = -0.25   # a buy may be vetoed for bad news only at or below this news score
+VETO_RSI = 80.0     # ... or for being extremely overbought only at or above this RSI
+
+
+def buy_veto_evidence(order, news_scores):
+    """Hard evidence that justifies skipping a rule-approved buy, or ''."""
+    news = number(news_scores.get(order["symbol"], 0))
+    if news <= VETO_NEWS:
+        return f"bad news ({news:+.2f})"
+    if number(order.get("rsi"), 50.0) >= VETO_RSI:
+        return f"extremely overbought (RSI {number(order.get('rsi')):.1f})"
+    return ""
 
 
 def parse_json_answer(text):
@@ -504,7 +605,8 @@ def main():
             **common)
         trader_agent = Agent(role="Portfolio Manager and Trader",
             goal="Give the final list of orders to execute.",
-            backstory="You make the final decisions for an aggressive 16-day paper-trading contest.",
+            backstory=("You make the final decisions for a careful investor in a 16-day "
+                       "paper-trading contest: about 80% invested in healthy stocks, 20% cash."),
             **common)
 
         # News and Technical work in parallel, followed by the Market summary.
@@ -589,7 +691,10 @@ def main():
 
         plan_text = "\n".join(
             f"{index}. {order['side'].upper()} {order['qty']} {order['symbol']} "
-            f"@ limit {limit_price(order):.2f} (RAMS {order['rams']}) - {order['reason']}"
+            f"@ limit {limit_price(order):.2f} (RAMS {order['rams']}"
+            + (f", RSI {number(order.get('rsi')):.1f}, news {number(news_scores.get(order['symbol'], 0)):+.2f}"
+               if order["side"] == "buy" else "")
+            + f") - {order['reason']}"
             for index, order in enumerate(plan, 1))
 
         # The Trader can select only numbered Python proposals.
@@ -597,8 +702,16 @@ def main():
             description=(f"Account: {json.dumps(account)}\nOpen positions: {pos_text}\n"
                          f"Regime: {regime}\nNews scores: {json.dumps(news_scores)}\n\n"
                          f"Proposed orders:\n{plan_text}\n\n"
-                         "Review each order. Reject only with a clear risk reason (too much in one "
-                         "sector, very bad news, extremely overbought). Give a short reason for each."),
+                         "How to read the numbers: RAMS is a 0-100 STRENGTH score (higher is better; "
+                         "buys go only to healthy stocks: RAMS 50+, not in a downtrend, no bad news; "
+                         "20% of equity always stays in cash). Overbought is "
+                         "judged by RSI only: extremely overbought means RSI 80 or more. Very bad "
+                         f"news means a news score of {VETO_NEWS} or lower. Sizes and the 6% "
+                         "protective stop were already set by the risk rules.\n"
+                         "The investor is careful but wants about 80% invested, and cash earns "
+                         "nothing. Review each order and APPROVE it unless one of these applies: "
+                         "very bad news, RSI 80 or more, or more than 40% of equity in one sector. "
+                         "Give a short reason for each."),
             expected_output="A markdown list: each order APPROVED or REJECTED with a reason.",
             agent=risk_agent)
         trade_task = Task(
@@ -623,6 +736,19 @@ def main():
             chosen = list(range(1, len(plan) + 1))
         else:
             chosen = sorted(set(chosen_data))
+        # A rule-approved buy is skipped only with hard evidence (bad news or RSI 80+).
+        if chosen_valid:
+            for i, order in enumerate(plan, 1):
+                if order["side"] == "buy" and i not in chosen:
+                    evidence = buy_veto_evidence(order, news_scores)
+                    if evidence:
+                        print(f"   Trader skipped {order['symbol']}: {evidence}.")
+                    else:
+                        print(f"   Trader skipped {order['symbol']} without evidence "
+                              f"(news {number(news_scores.get(order['symbol'], 0)):+.2f}, "
+                              f"RSI {number(order.get('rsi')):.1f}); keeping the buy.")
+                        execution_entries.append(f"{order['symbol']} buy kept: AI veto had no evidence")
+                        chosen.append(i)
         # Protective exits are never skipped, whatever the Trader chose.
         chosen = sorted(set(chosen) | {i for i, order in enumerate(plan, 1)
                                        if order["side"] == "sell" and "stop" in order["reason"]})
