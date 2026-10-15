@@ -16,7 +16,13 @@ unavailable the run continues with the rule-based plan, so trading never stops.
 """
 
 import os
+import sys
 os.environ.setdefault("CREWAI_TRACING_ENABLED", "false")
+for _stream in (sys.stdout, sys.stderr):   # Windows consoles: print emojis safely
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 os.environ.setdefault("OTEL_SDK_DISABLED", "true")
 
 import asyncio
@@ -149,7 +155,7 @@ def _today():
 
 def load_daily_limits():
     try:
-        data = json.loads(LIMITS_FILE.read_text())
+        data = json.loads(LIMITS_FILE.read_text(encoding="utf-8"))
         return set(data.get(_today(), []))
     except (OSError, ValueError, AttributeError):
         return set()
@@ -158,7 +164,7 @@ def load_daily_limits():
 def mark_daily_limit(model):
     try:
         LIMITS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        LIMITS_FILE.write_text(json.dumps({_today(): sorted(load_daily_limits() | {model})}))
+        LIMITS_FILE.write_text(json.dumps({_today(): sorted(load_daily_limits() | {model})}), encoding="utf-8")
     except OSError:
         pass
 
@@ -182,7 +188,7 @@ def mcp(tool, args=None):
 def load_symbols():
     if not STOCKS_FILE.exists():
         sys.exit(f"Create {STOCKS_FILE} with one ticker per line.")
-    syms = [l.strip().upper() for l in STOCKS_FILE.read_text().splitlines()]
+    syms = [l.strip().upper() for l in STOCKS_FILE.read_text(encoding="utf-8-sig").splitlines()]
     return [s for s in syms if s and not s.startswith("#")]
 
 
@@ -199,7 +205,7 @@ def parse_json(text, default):
 
 def save(folder, name, stamp, text):
     path = folder / f"{name}{stamp}.md"
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8")
     print("   saved", path.relative_to(PROJECT))
 
 
@@ -427,7 +433,7 @@ PROFIT_FILE = OUTPUTS / "profit_taken.json"
 def load_profit_taken(positions_list):
     """{symbol: entry} of positions that already took half profit (still held)."""
     try:
-        data = json.loads(PROFIT_FILE.read_text())
+        data = json.loads(PROFIT_FILE.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         data = {}
     held = {str(p.get("symbol", "")).upper(): number(p.get("avg_entry_price"))
@@ -439,7 +445,7 @@ def load_profit_taken(positions_list):
 def save_profit_taken(data):
     try:
         PROFIT_FILE.parent.mkdir(parents=True, exist_ok=True)
-        PROFIT_FILE.write_text(json.dumps(data, indent=1))
+        PROFIT_FILE.write_text(json.dumps(data, indent=1), encoding="utf-8")
     except OSError:
         pass
 

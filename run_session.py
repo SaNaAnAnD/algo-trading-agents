@@ -36,6 +36,15 @@ from pathlib import Path
 from dotenv import load_dotenv
 from alpaca.trading.client import TradingClient
 
+for _stream in (sys.stdout, sys.stderr):   # Windows consoles: print emojis safely
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
+# UTF-8 for the server and crew child processes too (Windows defaults to cp1252)
+CHILD_ENV = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+
 PROJECT = Path(__file__).resolve().parent
 IST = timezone(timedelta(hours=5, minutes=30))
 load_dotenv(PROJECT / ".env")
@@ -149,7 +158,7 @@ def start_server():
     OUT.mkdir(parents=True, exist_ok=True)
     logf = open(OUT / "server_log.txt", "a", encoding="utf-8")
     proc = subprocess.Popen([sys.executable, str(PROJECT / "servers" / "alpaca_trading_mcpServer.py")],
-                            cwd=PROJECT, stdout=logf, stderr=subprocess.STDOUT,
+                            cwd=PROJECT, stdout=logf, stderr=subprocess.STDOUT, env=CHILD_ENV,
                             stdin=subprocess.DEVNULL)
     for _ in range(60):
         if server_up():
@@ -179,7 +188,7 @@ def wait(secs: float, label: str) -> None:
 
 
 def run_crew(n: int) -> None:
-    env = dict(os.environ, CREWAI_TRACING_ENABLED="false", PYTHONUNBUFFERED="1")
+    env = dict(CHILD_ENV, CREWAI_TRACING_ENABLED="false", PYTHONUNBUFFERED="1")
     print(f"\n{'#' * 70}\n# Run {n} | {ist(datetime.now(timezone.utc))}\n{'#' * 70}", flush=True)
     t0 = time.time()
     try:
