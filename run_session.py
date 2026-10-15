@@ -144,6 +144,9 @@ def main() -> int:
             if close - now < timedelta(minutes=10):
                 wait((close - now).total_seconds() + 60, "Close is near; no new run. Stopping after the close")
                 continue
+            if not server_up():   # the MCP server stopped: start it again
+                log("MCP server was not running; restarting it")
+                server = start_server() or server
             runs += 1
             run_crew(runs)
             c2 = clock(tc)

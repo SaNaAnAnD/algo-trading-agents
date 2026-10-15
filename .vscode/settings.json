@@ -4,5 +4,6 @@
   "files.exclude": {
     "**/__pycache__": true,
     "**/*.autopilot.bak": true
-  }
+  },
+  "python.terminal.useEnvFile": false
 }

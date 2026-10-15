@@ -116,6 +116,28 @@ TESTS = [
 ]
 
 
+def test_profit_taken_only_once_then_breakeven():
+    final = {"stocks": [stock("WIN", "HOLD", price=130, atr=5, qty=0)]}
+    positions = {"positions": [position("WIN", qty=4, entry=100, value=520)]}
+    first = build_plan(final, positions, account(), SETTINGS)
+    assert first[0]["reason"] == "take half profit" and first[0]["qty"] == 2
+    again = build_plan(final, positions, account(), SETTINGS, profit_taken={"WIN": 100})
+    assert again == []
+    final = {"stocks": [stock("WIN", "HOLD", price=99, atr=5, qty=0)]}
+    back = build_plan(final, positions, account(), SETTINGS, profit_taken={"WIN": 100})
+    assert back[0]["reason"] == "breakeven stop after taking profit" and back[0]["qty"] == 4
+
+
+def test_pending_buy_not_bought_twice():
+    final = {"stocks": [stock("NEW", "BUY", price=10, atr=1, qty=5)]}
+    plan = build_plan(final, {"positions": []}, account(equity=100000, cash=100000),
+                      SETTINGS, pending_buys={"NEW"})
+    assert plan == []
+
+
+TESTS += [test_profit_taken_only_once_then_breakeven, test_pending_buy_not_bought_twice]
+
+
 if __name__ == "__main__":
     failures = 0
     for test in TESTS:

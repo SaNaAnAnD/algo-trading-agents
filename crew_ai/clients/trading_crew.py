@@ -8,7 +8,8 @@ Settings from .env: MCP_URL (http://localhost:8001/mcp),
 LLM_MODEL (groq/openai/gpt-oss-120b), TARGET_INVESTED (0.95, 0 to 1),
 STOP_ATR (2.5, above 0), TAKE_PROFIT_ATR (3.0, above 0),
 LIMIT_BUFFER (0.003), MAX_RPM (20), NEWS_HEADLINES (3),
-EXTENDED_HOURS (true), and LLM_RETRIES (3).
+EXTENDED_HOURS (false), CREW_VERBOSE (true), LLM_RETRIES (1) and LLM_BACKUP_MODELS
+(comma list, tried in order when the main model fails or hits its daily limit).
 """
 
 import os
@@ -79,8 +80,13 @@ SETTINGS = {
     "LIMIT_BUFFER": read_setting("LIMIT_BUFFER", 0.003, parse_finite_float),
     "MAX_RPM": read_setting("MAX_RPM", 20, int, lambda value: value > 0),
     "NEWS_HEADLINES": read_setting("NEWS_HEADLINES", 3, int, lambda value: value >= 0),
-    "EXTENDED_HOURS": read_setting("EXTENDED_HOURS", True, parse_bool),
-    "LLM_RETRIES": read_setting("LLM_RETRIES", 3, int, lambda value: value >= 0),
+    "EXTENDED_HOURS": read_setting("EXTENDED_HOURS", False, parse_bool),
+    "LLM_RETRIES": read_setting("LLM_RETRIES", 1, int, lambda value: value >= 0),
+    # Show each agent's live reasoning panels in the terminal (CrewAI verbose mode).
+    "CREW_VERBOSE": read_setting("CREW_VERBOSE", True, parse_bool),
+    "LLM_BACKUP_MODELS": read_setting(
+        "LLM_BACKUP_MODELS",
+        "groq/openai/gpt-oss-20b,groq/qwen/qwen3.8-27b,groq/llama-3.3-70b-versatile", str),
     "MAX_TRADE_RISK_FRACTION": read_setting(
         "MAX_TRADE_RISK_FRACTION", 0.015, parse_finite_float,
         lambda value: 0 < value <= 0.05),
@@ -100,11 +106,17 @@ HIGH_BETA_SYMBOLS = {
     if symbol.strip()
 }
 
-llm = LLM(
-    model=SETTINGS["LLM_MODEL"],
-    api_key=os.getenv("GROQ_API_KEY"),
-    temperature=0.2,
-)
+def make_llm(model):
+    return LLM(model=model, api_key=os.getenv("GROQ_API_KEY"), temperature=0.2)
+
+
+# Main model first, then the backups. Each free Groq model has its own daily
+# token quota, so a model that hits its limit is skipped for the rest of the run.
+MODELS = [SETTINGS["LLM_MODEL"]] + [
+    m.strip() for m in SETTINGS["LLM_BACKUP_MODELS"].split(",")
+    if m.strip() and m.strip() != SETTINGS["LLM_MODEL"]]
+DEAD_MODELS = set()
+llm = make_llm(MODELS[0])
 
 
 # ---------------- helpers ----------------
@@ -172,8 +184,14 @@ def number(value, default=0.0):
         return default
 
 
-def build_plan(final, positions, account, settings):
-    """Build orders from supplied data only; this function makes no network calls."""
+def build_plan(final, positions, account, settings, profit_taken=None, pending_buys=()):
+    """Build orders from supplied data only; this function makes no network calls.
+
+    profit_taken: {symbol: entry price} of positions that already sold half,
+    so the half is taken once and the rest keeps a breakeven stop.
+    pending_buys: symbols with an unfilled buy order (never buy twice).
+    """
+    profit_taken = profit_taken or {}
     held = {str(position["symbol"]).upper(): position
             for position in positions.get("positions", [])}
     info = {str(stock.get("symbol", "")).upper(): stock
@@ -201,13 +219,18 @@ def build_plan(final, positions, account, settings):
             "rams": number(stock.get("rams")),
             "stop_loss": stock.get("stop_loss"),
         }
+        took_half = symbol in profit_taken and abs(number(profit_taken[symbol]) - entry) < 0.01
         if price <= entry - settings["STOP_ATR"] * atr:
             order.update(qty=qty, reason="stop-loss hit")
+            stop_sells.append(order)
+        elif took_half and price <= entry:
+            order.update(qty=qty, reason="breakeven stop after taking profit")
             stop_sells.append(order)
         elif stock.get("signal") == "SELL":
             order.update(qty=qty, reason=f"RAMS {stock.get('rams')} below sell level")
             signal_sells.append(order)
-        elif price >= entry + settings["TAKE_PROFIT_ATR"] * atr and qty >= 2:
+        elif (not took_half and price >= entry + settings["TAKE_PROFIT_ATR"] * atr
+              and qty >= 2):
             order.update(qty=qty // 2, reason="take half profit")
             profit_sells.append(order)
 
@@ -224,7 +247,7 @@ def build_plan(final, positions, account, settings):
     for stock in sorted(info.values(), key=lambda item: number(item.get("rams")), reverse=True):
         symbol = str(stock.get("symbol", "")).upper()
         price = number(stock.get("price"))
-        if symbol in planned_symbols or price <= 0:
+        if symbol in planned_symbols or symbol in pending_buys or price <= 0:
             continue
         signal = stock.get("signal")
         if signal == "BUY":
@@ -271,6 +294,35 @@ def build_plan(final, positions, account, settings):
     return sells + buys
 
 
+PROFIT_FILE = PROJECT / "outputs" / "profit_taken.json"
+
+
+def load_profit_taken(positions_list):
+    """{symbol: entry} of positions that already took half profit (still held)."""
+    try:
+        data = json.loads(PROFIT_FILE.read_text())
+    except (OSError, ValueError):
+        data = {}
+    held = {str(p.get("symbol", "")).upper(): number(p.get("avg_entry_price"))
+            for p in positions_list}
+    return {sym: entry for sym, entry in data.items()
+            if sym in held and abs(number(entry) - held[sym]) < 0.01}
+
+
+def save_profit_taken(data):
+    try:
+        PROFIT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        PROFIT_FILE.write_text(json.dumps(data, indent=1))
+    except OSError:
+        pass
+
+
+def task_text(task):
+    """A task's answer, or '' when the AI did not run."""
+    output = getattr(task, "output", None)
+    return str(getattr(output, "raw", "") or "") if output is not None else ""
+
+
 def parse_json_answer(text):
     """Parse JSON from a plain response or a fenced/prose-wrapped response."""
     try:
@@ -286,25 +338,40 @@ def parse_json_answer(text):
 
 
 def run_crew(crew):
-    """Run a Crew, retrying rate-limit failures with the requested backoff."""
-    retries = SETTINGS["LLM_RETRIES"]
-    for attempt in range(retries + 1):
-        try:
-            crew.kickoff()
-            return True
-        except Exception as error:
-            message = str(error)
-            lowered = message.lower()
-            if "model_not_found" in lowered or "does not exist" in lowered:
-                print("Model not found - check LLM_MODEL in .env against console.groq.com/docs/models")
-                return False
-            if ("429" in message or "rate" in lowered) and attempt < retries:
-                delay = 30 * (attempt + 1)
-                print(f"LLM rate limit; retrying in {delay} seconds...")
-                time.sleep(delay)
-                continue
-            print(f"LLM error: {message}")
-            return False
+    """Run a Crew, falling back through the backup models.
+
+    A short per-minute rate limit is retried after a pause; a daily limit,
+    an unknown model or any other error moves straight to the next model.
+    Returns False only when every model failed (the caller then continues
+    with the rule-based plan, so stop-losses still execute).
+    """
+    for model in MODELS:
+        if model in DEAD_MODELS:
+            continue
+        model_llm = make_llm(model)
+        for agent in crew.agents:
+            agent.llm = model_llm
+        for attempt in range(SETTINGS["LLM_RETRIES"] + 1):
+            try:
+                crew.kickoff()
+                if model != MODELS[0]:
+                    print(f"   (used backup model {model})")
+                return True
+            except Exception as error:
+                message = str(error)
+                lowered = message.lower()
+                daily = ("per day" in lowered or "tpd" in lowered or "rpd" in lowered
+                         or "model_not_found" in lowered or "does not exist" in lowered
+                         or "decommissioned" in lowered or "invalid api key" in lowered)
+                short_limit = "429" in message or "rate" in lowered
+                if short_limit and not daily and attempt < SETTINGS["LLM_RETRIES"]:
+                    print(f"LLM rate limit on {model}; retrying in 20 seconds...")
+                    time.sleep(20)
+                    continue
+                print(f"LLM {model} unavailable ({message[:120]}); trying the next model.")
+                DEAD_MODELS.add(model)
+                break
+    print("All AI models unavailable this run; using the rule-based plan.")
     return False
 
 
@@ -390,6 +457,14 @@ def main():
         buy_threshold = technical.get("buy_threshold", "unavailable")
 
         positions_list = positions.get("positions", []) if isinstance(positions, dict) else []
+        try:
+            open_orders = mcp("get_open_orders").get("orders", [])
+        except Exception:
+            open_orders = []
+        pending_buys = {str(o.get("symbol", "")).upper() for o in open_orders
+                        if "buy" in str(o.get("side", "")).lower()}
+        profit_taken = load_profit_taken(positions_list)
+        ai_ok = True
         watched = set(symbols)
         for position in positions_list:
             symbol = str(position.get("symbol", "")).upper()
@@ -410,7 +485,7 @@ def main():
         pos_text = json.dumps(positions_list, indent=1) if positions_list else "No open positions."
 
         # These five agents keep their existing responsibilities and handoffs.
-        common = dict(llm=llm, allow_delegation=False, verbose=False)
+        common = dict(llm=llm, allow_delegation=False, verbose=SETTINGS["CREW_VERBOSE"])
         market_agent = Agent(role="Market Data Agent",
             goal="Summarise the market regime, the account and the analysts' key findings.",
             backstory="You monitor the US market and the paper-trading account for a student trading desk.",
@@ -459,12 +534,13 @@ def main():
         first_crew = Crew(agents=[news_agent, tech_agent, market_agent],
                           tasks=[news_task, tech_task, market_task],
                           process=Process.sequential, max_rpm=SETTINGS["MAX_RPM"],
-                          verbose=False, tracing=False)
+                          verbose=SETTINGS["CREW_VERBOSE"], tracing=False)
         if not run_crew(first_crew):
-            run_status = "First CrewAI run failed."
-            return
+            ai_ok = False
+            print("   AI analysts unavailable: neutral news scores, rules continue.")
+            execution_entries.append("AI analysts unavailable; neutral news, rule-based plan.")
 
-        news_data, news_valid = parse_json_answer(news_task.output.raw)
+        news_data, news_valid = parse_json_answer(task_text(news_task))
         if not news_valid or not isinstance(news_data, dict):
             print("Warning: News agent response was not valid JSON; using neutral scores.")
             news_scores = {symbol: 0 for symbol in symbols}
@@ -478,9 +554,9 @@ def main():
              "\n\n## Scores\n```json\n" + json.dumps(news_scores, indent=2) + "\n```\n")
         save(folder, "technicalAnalystAgent", timestamp,
              "# Technical Analyst Agent\n\n" + rams_table(technical) +
-             "\n\n" + str(tech_task.output.raw))
+             "\n\n" + (task_text(tech_task) or "(AI unavailable this run)"))
         save(folder, "marketDataAgent", timestamp,
-             "# Market Data Agent\n\n" + str(market_task.output.raw))
+             "# Market Data Agent\n\n" + (task_text(market_task) or "(AI unavailable this run)"))
 
         print("[3/5] Final RAMS scores (technical + news)...")
         try:
@@ -497,7 +573,10 @@ def main():
         regime = final.get("regime", regime)
         buy_threshold = final.get("buy_threshold", buy_threshold)
         print(rams_table(final, news_scores))
-        plan = build_plan(final, positions, account, SETTINGS)
+        plan = build_plan(final, positions, account, SETTINGS,
+                          profit_taken=profit_taken, pending_buys=pending_buys)
+        if pending_buys:
+            print(f"   Waiting for earlier buy order(s) to fill: {', '.join(sorted(pending_buys))}")
         if not plan:
             print("\n[4/5] No trades suggested this run.")
             run_status = "No trades proposed."
@@ -531,28 +610,30 @@ def main():
         print("\n[4/5] Risk Manager and Trader reviewing the plan...")
         second_crew = Crew(agents=[risk_agent, trader_agent], tasks=[risk_task, trade_task],
                            process=Process.sequential, max_rpm=SETTINGS["MAX_RPM"],
-                           verbose=False, tracing=False)
-        if not run_crew(second_crew):
-            run_status = "Risk Manager and Trader CrewAI run failed."
-            return
-
-        chosen_data, chosen_valid = parse_json_answer(trade_task.output.raw)
-        chosen_valid = (chosen_valid and isinstance(chosen_data, list)
+                           verbose=SETTINGS["CREW_VERBOSE"], tracing=False)
+        if not (ai_ok and run_crew(second_crew)):
+            ai_ok = False
+        chosen_data, chosen_valid = parse_json_answer(task_text(trade_task))
+        chosen_valid = (ai_ok and chosen_valid and isinstance(chosen_data, list)
                         and all(isinstance(item, int) and not isinstance(item, bool)
                                 and 1 <= item <= len(plan) for item in chosen_data))
         if not chosen_valid:
-            print("Warning: Trader response was not a valid list of order numbers; proposing no orders.")
-            chosen = []
+            # No usable AI decision: the Python plan already passed every risk limit.
+            print("   No valid Trader answer; executing the rule-based plan.")
+            chosen = list(range(1, len(plan) + 1))
         else:
             chosen = sorted(set(chosen_data))
+        # Protective exits are never skipped, whatever the Trader chose.
+        chosen = sorted(set(chosen) | {i for i, order in enumerate(plan, 1)
+                                       if order["side"] == "sell" and "stop" in order["reason"]})
         final_orders = [plan[index - 1] for index in chosen]
         save(folder, "riskManagerAgent", timestamp,
              "# Risk Manager Agent\n\n## Proposed orders\n" + plan_text +
-             "\n\n## Review\n" + str(risk_task.output.raw))
+             "\n\n## Review\n" + (task_text(risk_task) or "(AI unavailable: rule-based plan)"))
         save(folder, "traderAgent", timestamp,
              f"# Trader Agent\n\n## Final RAMS table (including news)\n\n"
              f"{rams_table(final, news_scores)}\n\n"
-             f"Chosen order numbers: {chosen}\n\n" + str(trade_task.output.raw))
+             f"Chosen order numbers: {chosen}\n\n" + task_text(trade_task))
 
         print("\n[5/5] Final orders:")
         if not final_orders:
@@ -582,6 +663,11 @@ def main():
                     "extended_hours": SETTINGS["EXTENDED_HOURS"],
                 })
                 status = result.get("status", "submitted") if isinstance(result, dict) else str(result)
+                if order["side"] == "sell" and order["reason"] == "take half profit":
+                    entry = next((number(p.get("avg_entry_price")) for p in positions_list
+                                  if str(p.get("symbol", "")).upper() == order["symbol"]), 0)
+                    profit_taken[order["symbol"]] = entry
+                    save_profit_taken(profit_taken)
                 record = line + f" - {status}"
                 print(f"   {status}")
                 execution_entries.append(record)

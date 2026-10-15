@@ -17,8 +17,14 @@ with patch("alpaca.trading.client.TradingClient", return_value=MagicMock()), \
 class ServerOrderSafetyTests(unittest.TestCase):
     def setUp(self):
         # Enable order paths only inside these mocked, offline tests.
+        # Fixed limits so the tests do not depend on the values in .env.
         self.trading_enabled_patch = patch.dict(
-            "os.environ", {"TRADING_ENABLED": "true"}
+            "os.environ", {"TRADING_ENABLED": "true",
+                           "MAX_TRADE_RISK_FRACTION": "0.015",
+                           "MAX_POSITION_FRACTION": "0.12",
+                           "MAX_HIGH_BETA_POSITION_FRACTION": "0.08",
+                           "PROTECTIVE_STOP_FRACTION": "0.06",
+                           "HIGH_BETA_SYMBOLS": "MU,XYZ,HOOD,SMCI"}
         )
         self.trading_enabled_patch.start()
         self.addCleanup(self.trading_enabled_patch.stop)
