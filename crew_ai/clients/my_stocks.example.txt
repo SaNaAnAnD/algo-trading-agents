@@ -1,0 +1,3 @@
+# Copy to my_stocks.txt and put YOUR stocks, one ticker per line
+AAPL
+MSFT

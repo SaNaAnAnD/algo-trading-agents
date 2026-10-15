@@ -227,4 +227,8 @@ outputs/
 # Run records (reports for the professor) are kept in git; the server's
 # technical log is not.
 !crew_ai/outputs/
-crew_ai/outputs/server_log.txt
+crew_ai/outputs/**/server_log.txt
+
+# Personal files: each team member keeps their own
+crew_ai/clients/my_stocks.txt
+.vscode/settings.json

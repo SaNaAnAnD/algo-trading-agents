@@ -37,6 +37,10 @@ load_dotenv()
 
 PROJECT = Path(__file__).resolve().parent.parent
 STOCKS_FILE = PROJECT / "clients" / "my_stocks.txt"
+# Each team member's records go to their own folder (TRADER_NAME in .env), so
+# everyone can pull and push the same project without overwriting each other.
+TRADER = re.sub(r"[^a-z0-9_-]", "", os.getenv("TRADER_NAME", "").strip().lower())
+OUTPUTS = PROJECT / "outputs" / TRADER if TRADER else PROJECT / "outputs"
 
 
 def read_setting(name, default, parser, valid=lambda value: True):
@@ -136,7 +140,7 @@ if os.getenv("OLLAMA_URL") and os.getenv("OLLAMA_MODEL"):
     MODELS.append("ollama/" + os.getenv("OLLAMA_MODEL"))
 
 # Models that used up their free daily quota are skipped until the next UTC day.
-LIMITS_FILE = PROJECT / "outputs" / "llm_daily_limits.json"
+LIMITS_FILE = OUTPUTS / "llm_daily_limits.json"
 
 
 def _today():
@@ -417,7 +421,7 @@ def build_plan(final, positions, account, settings, profit_taken=None, pending_b
     return sells + buys
 
 
-PROFIT_FILE = PROJECT / "outputs" / "profit_taken.json"
+PROFIT_FILE = OUTPUTS / "profit_taken.json"
 
 
 def load_profit_taken(positions_list):
@@ -576,7 +580,7 @@ def main():
     flags = [flag for flag, enabled in (("--auto", auto), ("--dry-run", dry_run)) if enabled]
     now = datetime.now()
     timestamp = now.strftime("%d%m%Y-%H-%M")
-    folder = PROJECT / "outputs" / f"run_{now.strftime('%d%m%Y-%H-%M')}"
+    folder = OUTPUTS / f"run_{now.strftime('%d%m%Y-%H-%M')}"
     folder.mkdir(parents=True, exist_ok=True)
     symbols, regime, buy_threshold = [], "unavailable", "unavailable"
     execution_entries = []

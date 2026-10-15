@@ -1,0 +1,10 @@
+# conda:  conda create -n trading-agents python=3.12 -y && conda activate trading-agents
+# venv:   python3 -m venv .venv && source .venv/bin/activate   (Windows: .venv\\Scripts\\activate)
+# then:   pip install -r requirements.txt
+crewai
+litellm
+fastmcp
+alpaca-py
+pandas
+pandas-ta
+python-dotenv

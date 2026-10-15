@@ -6,15 +6,15 @@ Autonomous trading session (one command for the whole evening):
     python run_session.py
 
 - Starts the Alpaca MCP server in the background if it is not already running
-  (its log goes to crew_ai/outputs/server_log.txt).
+  (its log goes to crew_ai/outputs/<name>/server_log.txt).
 - Waits for the US market open (times shown in IST), first run 10 minutes
   after the open, then runs the full crew in --auto mode every 45 minutes:
   market data, news and technical agents, RAMS scores, Risk Manager and
   Trader, then the orders - with no questions asked.
 - No new run in the last 10 minutes; stops by itself after the close.
-- One line per run is added to crew_ai/outputs/session_log.txt: equity, % change
+- One line per run is added to crew_ai/outputs/<name>/session_log.txt: equity, % change
   since the $100,000 start, % invested, cash and the positions held.
-- At the end it writes crew_ai/outputs/daily_summary_<date>.md (start and end
+- At the end it writes crew_ai/outputs/<name>/daily_summary_<date>.md (start and end
   equity, every order of the day, final positions) and saves everything to
   GitHub (git add, commit, push). --no-save skips the GitHub step.
 - Ctrl + C stops it at any time.
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -36,9 +37,11 @@ from dotenv import load_dotenv
 from alpaca.trading.client import TradingClient
 
 PROJECT = Path(__file__).resolve().parent
-OUT = PROJECT / "crew_ai" / "outputs"   # same folder as the crew's run_* reports
 IST = timezone(timedelta(hours=5, minutes=30))
 load_dotenv(PROJECT / ".env")
+# same folder as the crew's run_* reports: crew_ai/outputs/<TRADER_NAME>/
+_TRADER = re.sub(r"[^a-z0-9_-]", "", os.getenv("TRADER_NAME", "").strip().lower())
+OUT = PROJECT / "crew_ai" / "outputs" / _TRADER if _TRADER else PROJECT / "crew_ai" / "outputs"
 
 
 def ist(dt: datetime) -> str:
@@ -46,7 +49,7 @@ def ist(dt: datetime) -> str:
 
 
 def log(text: str) -> None:
-    OUT.mkdir(exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
     line = f"{datetime.now(IST):%d-%m-%Y %H:%M} IST  {text}"
     print(">> " + line)
     with (OUT / "session_log.txt").open("a", encoding="utf-8") as f:
@@ -81,7 +84,7 @@ def snap_text(snap):
 
 
 def daily_summary(tc, first, last, runs, started_utc):
-    """crew_ai/outputs/daily_summary_<date>.md for the report."""
+    """crew_ai/outputs/<name>/daily_summary_<date>.md for the report."""
     from alpaca.trading.requests import GetOrdersRequest
     from alpaca.trading.enums import QueryOrderStatus
     day = started_utc   # the US trading day (the session ends after midnight IST)
@@ -143,19 +146,19 @@ def start_server():
     if server_up():
         print("MCP server already running on port 8001.")
         return None
-    OUT.mkdir(exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
     logf = open(OUT / "server_log.txt", "a", encoding="utf-8")
     proc = subprocess.Popen([sys.executable, str(PROJECT / "servers" / "alpaca_trading_mcpServer.py")],
                             cwd=PROJECT, stdout=logf, stderr=subprocess.STDOUT,
                             stdin=subprocess.DEVNULL)
     for _ in range(60):
         if server_up():
-            print("MCP server started (log: crew_ai/outputs/server_log.txt).")
+            print(f"MCP server started (log: {(OUT / 'server_log.txt').relative_to(PROJECT)}).")
             return proc
         if proc.poll() is not None:
             break
         time.sleep(1)
-    print("!! The MCP server did not start. Look at crew_ai/outputs/server_log.txt")
+    print("!! The MCP server did not start. Look at crew_ai/outputs/<name>/server_log.txt")
     sys.exit(1)
 
 
@@ -182,7 +185,7 @@ def run_crew(n: int) -> None:
     try:
         r = subprocess.run([sys.executable, str(PROJECT / "crew_ai" / "clients" / "trading_crew.py"), "--auto"],
                            cwd=PROJECT, env=env, stdin=subprocess.DEVNULL, timeout=12 * 60)
-        log(f"run {n}: finished (exit {r.returncode}) in {int(time.time() - t0)} s - details in the newest crew_ai/outputs/run_* folder")
+        log(f"run {n}: finished (exit {r.returncode}) in {int(time.time() - t0)} s - details in the newest run_* folder")
     except subprocess.TimeoutExpired:
         log(f"run {n}: took longer than 12 min, stopped; next run continues")
 
