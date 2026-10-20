@@ -4,18 +4,16 @@ Runs: 8 (one every 45 minutes, full CrewAI crew in auto mode)
 
 | | Start of session | End of session |
 |---|---|---|
-| Equity | $99,293.21 | $98,694.41 |
-| Invested | 80% | 56% |
-| Cash | $19,996 | $43,663 |
+| Equity | $99,324.54 | $98,694.41 |
+| Invested | 41% | 56% |
+| Cash | $58,704 | $43,663 |
 
-Session change: $-598.80 (-0.60%). Since the $100,000 start: -1.31%.
+Session change: $-630.13 (-0.63%). Since the $100,000 start: -1.31%.
 
 ## Orders
 
 | Time (IST) | Side | Qty | Stock | Type | Status | Fill price |
 |---|---|---|---|---|---|---|
-| 19:43 | SELL | 370 | FCX | LIMIT | FILLED | $68.23 |
-| 19:43 | SELL | 33 | V | LIMIT | FILLED | $407.96 |
 | 19:44 | SELL | 1 | GOOGL | LIMIT | FILLED | $343.68 |
 | 19:44 | BUY | 32 | V | LIMIT | FILLED | $407.55 |
 | 19:44 | SELL | 32 | V | STOP | EXPIRED |  |
