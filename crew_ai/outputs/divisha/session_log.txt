@@ -85,3 +85,11 @@
 21-10-2026 01:00 IST  after run 8: equity $98,686.15 (-1.31% vs start) | invested 56% | cash $43,663 | holding: AMZN 102, V 65, XYZ 23
 21-10-2026 01:31 IST  session ended after 8 run(s)
 21-10-2026 01:31 IST  session ended after 8 run(s)
+21-10-2026 23:12 IST  start: equity $98,952.00 (-1.05% vs start) | invested 56% | cash $43,661 | holding: AMZN 102, V 65, XYZ 23
+21-10-2026 23:13 IST  run 1: finished (exit 0) in 46 s - details in the newest run_* folder
+21-10-2026 23:13 IST  after run 1: equity $98,964.34 (-1.04% vs start) | invested 80% | cash $19,821 | holding: AMZN 102, HOOD 125, SMCI 309, V 65, XYZ 23
+21-10-2026 23:58 IST  run 2: finished (exit 0) in 44 s - details in the newest run_* folder
+21-10-2026 23:58 IST  after run 2: equity $98,968.91 (-1.03% vs start) | invested 80% | cash $19,821 | holding: AMZN 102, HOOD 125, SMCI 309, V 65, XYZ 23
+22-10-2026 00:43 IST  run 3: finished (exit 0) in 49 s - details in the newest run_* folder
+22-10-2026 00:43 IST  after run 3: equity $98,344.33 (-1.66% vs start) | invested 78% | cash $21,224 | holding: AMZN 102, HOOD 125, SMCI 309, V 65, XYZ 2
+22-10-2026 01:31 IST  session ended after 3 run(s)

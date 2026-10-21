@@ -1,0 +1,7 @@
+,total_return_pct,max_drawdown_pct,sharpe,closed_trades,win_rate_pct
+A. Current rules,24.4,-17.3,0.62,305.0,34.0
+B. + hysteresis/confirm/hold,76.2,-15.4,1.45,128.0,45.0
+C. + regime gate,61.8,-11.8,1.26,116.0,42.0
+D. Full proposal,73.4,-18.9,1.25,123.0,48.0
+Benchmark: equal-weight buy & hold,178.9,-32.6,1.41,0.0,
+Benchmark: SPY,45.3,-19.0,1.17,0.0,
