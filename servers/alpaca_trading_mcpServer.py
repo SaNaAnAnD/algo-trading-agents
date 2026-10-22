@@ -151,7 +151,7 @@ def _fetch_bars(symbols):
     syms = sorted({s.upper().strip() for s in symbols} | {"SPY"})
     req = StockBarsRequest(
         symbol_or_symbols=syms,
-        timeframe=TimeFrame.Hour,
+        timeframe=TimeFrame.Day,   # daily bars: the rules were backtested on daily data
         start=datetime.now(timezone.utc) - timedelta(days=config.HISTORY_DAYS),
         feed=DataFeed.IEX,  # free data feed for paper accounts
     )
@@ -268,7 +268,7 @@ def _score_symbol(d, spy_close):
 
 @mcp.tool()
 def get_bars_multi(symbols: list[str]) -> dict:
-    """Fetch 1-hour bars for ALL symbols (plus SPY) in ONE Alpaca call.
+    """Fetch daily bars for ALL symbols (plus SPY) in ONE Alpaca call.
     Returns a short summary per symbol.
 
     Args:
@@ -509,6 +509,59 @@ def place_limit_order(symbol: str, side: str, qty: int, limit_price: float,
         _protect_rest(symbol, quantity, _old_stop)
         return _order_to_dict(_sell)
     return _order_to_dict(_trading_client.submit_order(req))
+
+
+@mcp.tool()
+def ensure_protective_stops() -> dict:
+    """Make sure every held share has a live GTC protective stop.
+
+    The stop leg of a buy order is a DAY order and expires at the close, which left
+    positions unprotected overnight. For each position, any shares not covered by an
+    open sell stop get a new GTC stop (PROTECTIVE_STOP_FRACTION below the lower of
+    entry and current price). A position with another open sell order is skipped,
+    because the broker would reject a second sell on the same shares.
+    """
+    _require_trading_enabled()
+    from alpaca.trading.requests import StopOrderRequest
+    try:
+        fraction = float(os.getenv("PROTECTIVE_STOP_FRACTION", "0.06"))
+    except ValueError:
+        fraction = 0.06
+    if not math.isfinite(fraction) or not 0 < fraction < 1:
+        fraction = 0.06
+    actions = []
+    open_orders = _trading_client.get_orders()
+    for p in _trading_client.get_all_positions():
+        symbol = p.symbol.upper()
+        qty = int(float(p.qty))
+        if qty <= 0:
+            continue
+        sells = [o for o in open_orders
+                 if str(getattr(o, "symbol", "")).upper() == symbol
+                 and str(getattr(o, "side", "")).lower().endswith("sell")]
+        covered = sum(int(float(o.qty or 0)) for o in sells
+                      if getattr(o, "stop_price", None) is not None)
+        other_sell = [o for o in sells if getattr(o, "stop_price", None) is None]
+        # Stops that sit inside an unfilled OTO parent are not "open" yet: skip those too.
+        if other_sell:
+            actions.append(f"{symbol}: skipped (another sell order is open)")
+            continue
+        missing = qty - covered
+        if missing <= 0:
+            continue
+        price = float(p.current_price)
+        base = min(float(p.avg_entry_price), price) * (1 - fraction)
+        stop_price = round(min(base, price * 0.99), 2)
+        if stop_price <= 0:
+            continue
+        try:
+            _trading_client.submit_order(StopOrderRequest(
+                symbol=symbol, qty=missing, side=OrderSide.SELL,
+                time_in_force=TimeInForce.GTC, stop_price=stop_price))
+            actions.append(f"{symbol}: added GTC stop for {missing} shares at {stop_price}")
+        except Exception as e:
+            actions.append(f"{symbol}: could not add stop ({str(e)[:100]})")
+    return {"actions": actions}
 
 
 @mcp.tool()

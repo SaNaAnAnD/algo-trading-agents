@@ -66,7 +66,7 @@ def log(text: str) -> None:
 
 
 START_EQUITY = 100_000.0   # contest starting capital
-EVERY_MIN = 45             # minutes between runs (set from --every)
+EVERY_MIN = 150            # minutes between runs (set from --every)
 
 
 def snapshot(tc):
@@ -202,7 +202,7 @@ def run_crew(n: int) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--every", type=int, default=45, help="minutes between runs (default 45)")
+    ap.add_argument("--every", type=int, default=150, help="minutes between runs (default 150 = 3 runs a day)")
     ap.add_argument("--now", action="store_true", help="first run immediately if the market is open")
     ap.add_argument("--no-save", action="store_true", help="do not commit and push to GitHub at the end")
     a = ap.parse_args()

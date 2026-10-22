@@ -82,3 +82,21 @@ rule-based plan, so exits and allocation still happen.
 of each session `crew_ai/outputs/daily_summary_<date>.md` lists the start and end
 equity, every order of the day and the final positions, and the records are
 committed to GitHub. Agent reports for every run are in `crew_ai/outputs/run_*`.
+
+## 22 Oct 2026 - Backtest-driven fixes (less churn, daily signals, protected positions)
+
+**Evidence.** `backtest_rams.py` (3 years of daily bars, 5 bps cost, news neutral):
+current rules +24.4% with 305 trades; wider buy/sell gap + confirmation + minimum hold
++76.2% with 128 trades (Sharpe 0.62 -> 1.45). RAMS itself did not predict the next 5 days
+(correlation -0.04), so the gain comes from trading less, not from a better signal.
+A regime gate (buy only at RAMS 70 in a bear market) lowered the return and was not adopted.
+
+**Changes.** (1) RAMS now uses daily bars (the rules were tested on daily data).
+(2) Buy at RAMS 60+ (was 50), sell below 30 (was 40). (3) A sell signal must show on 2 different
+days and the position must be held 3 days; stop-losses are never delayed. (4) 2-day cooldown before
+re-buying a stock just sold. (5) "Take half profit" is off by default (TAKE_HALF_PROFIT) and its
+flag is now keyed by stock, so an average-price change cannot reset it. (6) `ensure_protective_stops`
+re-attaches a GTC stop to every position at the start of each run (DAY stops had expired).
+(7) Stop-loss exits use a 1.5% limit buffer so they fill. (8) Every SELL is always executed; the
+Risk Manager reviews BUYs only and receives code-computed exposure numbers. (9) AI temperature 0
+and news scores smoothed with the previous run. (10) 3 runs a day (`--every 150`).

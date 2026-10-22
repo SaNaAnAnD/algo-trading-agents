@@ -178,6 +178,108 @@ TESTS += [test_profit_taken_only_once_then_breakeven, test_pending_buy_not_bough
           test_careful_does_not_add_to_a_loser]
 
 
+from trading_crew import (update_signal_days, exposure_report, limit_price, sync_entries,
+                          load_profit_taken, signal_confirmed)
+
+CHURN = {**CAREFUL, "HEALTHY_MIN_RAMS": 60, "MIN_HOLD_DAYS": 3, "CONFIRM_BUY_DAYS": 1,
+         "CONFIRM_SELL_DAYS": 2, "COOLDOWN_DAYS": 2, "TAKE_HALF_PROFIT": False}
+
+
+def _weak_held(rams=25):
+    final = {"stocks": [stock("V", "SELL", price=400, atr=2, rams=rams, trend=25, news_points=50)]}
+    positions = {"positions": [position("V", qty=10, entry=400, value=4000, unrealized=0)]}
+    return final, positions
+
+
+def test_weak_signal_needs_two_days_before_selling():
+    final, positions = _weak_held()
+    state = {"sell_days": {"V": ["2026-10-20"]}, "entry": {"V": "2026-10-01"}}
+    assert build_plan(final, positions, account(100000, 90000), CHURN, state=state, today="2026-10-20") == []
+    state["sell_days"]["V"] = ["2026-10-19", "2026-10-20"]
+    plan = build_plan(final, positions, account(100000, 90000), CHURN, state=state, today="2026-10-20")
+    assert [o["side"] for o in plan] == ["sell"]
+
+
+def test_minimum_hold_blocks_signal_sell_but_not_stop_loss():
+    final, positions = _weak_held()
+    state = {"sell_days": {"V": ["2026-10-19", "2026-10-20"]}, "entry": {"V": "2026-10-19"}}
+    assert build_plan(final, positions, account(100000, 90000), CHURN, state=state, today="2026-10-20") == []
+    crash = {"stocks": [stock("V", "SELL", price=300, atr=2, rams=25, trend=25, news_points=50)]}
+    plan = build_plan(crash, positions, account(100000, 90000), CHURN, state=state, today="2026-10-20")
+    assert plan and plan[0]["reason"] == "stop-loss hit"
+
+
+def test_cooldown_blocks_rebuying_a_stock_just_sold():
+    final = {"stocks": [stock("V", "WAIT", price=400, atr=2, rams=80, trend=100, news_points=60)]}
+    state = {"buy_days": {"V": ["2026-10-20"]}, "last_sold": {"V": "2026-10-19"}}
+    assert build_plan(final, {"positions": []}, account(100000, 100000), CHURN,
+                      state=state, today="2026-10-20") == []
+    state["last_sold"]["V"] = "2026-10-10"
+    plan = build_plan(final, {"positions": []}, account(100000, 100000), CHURN,
+                      state=state, today="2026-10-20")
+    assert [o["side"] for o in plan] == ["buy"]
+
+
+def test_buy_needs_rams_60():
+    final = {"stocks": [stock("GE", "WAIT", price=200, atr=2, rams=55, trend=50, news_points=60)]}
+    state = {"buy_days": {}}
+    update_signal_days(state, final, CHURN, "2026-10-20")
+    assert build_plan(final, {"positions": []}, account(100000, 100000), CHURN,
+                      state=state, today="2026-10-20") == []
+
+
+def test_signal_days_count_once_per_day_and_reset():
+    final = {"stocks": [stock("V", "SELL", price=400, atr=2, rams=25, trend=25, news_points=50)]}
+    state = {}
+    update_signal_days(state, final, CHURN, "2026-10-20")
+    update_signal_days(state, final, CHURN, "2026-10-20")      # second run, same day
+    assert state["sell_days"]["V"] == ["2026-10-20"]
+    update_signal_days(state, final, CHURN, "2026-10-21")
+    assert signal_confirmed(state, "sell_days", "V", 2)
+    ok = {"stocks": [stock("V", "HOLD", price=400, atr=2, rams=75, trend=100, news_points=50)]}
+    update_signal_days(state, ok, CHURN, "2026-10-22")         # one good day resets the streak
+    assert state["sell_days"]["V"] == []
+
+
+def test_half_profit_flag_survives_a_changed_average_price():
+    held = [{"symbol": "AMZN", "avg_entry_price": "259.35"}]
+    import trading_crew
+    trading_crew.PROFIT_FILE = Path(__file__).parent / "_tmp_profit.json"
+    trading_crew.PROFIT_FILE.write_text('{"AMZN": 256.0, "GONE": 10.0}')
+    try:
+        assert load_profit_taken(held) == {"AMZN": 256.0}
+    finally:
+        trading_crew.PROFIT_FILE.unlink()
+
+
+def test_stop_exit_uses_wide_limit_buffer():
+    stop = {"symbol": "X", "side": "sell", "price": 100.0, "reason": "stop-loss hit"}
+    normal = {"symbol": "X", "side": "sell", "price": 100.0, "reason": "RAMS 20 below sell level"}
+    assert limit_price(stop) == 98.5 and limit_price(normal) == 99.7
+
+
+def test_exposure_report_uses_real_numbers():
+    positions = [{"symbol": "V", "market_value": "27000"}]
+    plan = [{"symbol": "MU", "side": "buy", "qty": 10, "price": 900.0}]
+    text = exposure_report(positions, plan, {"equity": "100000"})
+    assert "invested 36%" in text and "Payments / fintech 27%" in text and "high-beta stocks 9%" in text
+
+
+def test_new_position_gets_entry_date_old_one_is_treated_as_old():
+    state = {}
+    sync_entries(state, [{"symbol": "V"}], set(), CHURN, "2026-10-20")
+    assert state["entry"]["V"] == "2026-10-17"      # 3 days earlier: free to sell on a real signal
+
+
+TESTS += [test_weak_signal_needs_two_days_before_selling,
+          test_minimum_hold_blocks_signal_sell_but_not_stop_loss,
+          test_cooldown_blocks_rebuying_a_stock_just_sold, test_buy_needs_rams_60,
+          test_signal_days_count_once_per_day_and_reset,
+          test_half_profit_flag_survives_a_changed_average_price,
+          test_stop_exit_uses_wide_limit_buffer, test_exposure_report_uses_real_numbers,
+          test_new_position_gets_entry_date_old_one_is_treated_as_old]
+
+
 if __name__ == "__main__":
     failures = 0
     for test in TESTS:

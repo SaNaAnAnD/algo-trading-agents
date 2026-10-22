@@ -1,7 +1,7 @@
 # config.py - all settings for the RAMS indicator in one place
 
 # How many calendar days of 1-hour bars to download
-HISTORY_DAYS = 90
+HISTORY_DAYS = 480   # daily bars: the 200-day average needs about 300 trading days
 
 # Pillar weights (must add up to 1.0)
 W_TREND = 0.30
@@ -14,7 +14,7 @@ W_NEWS = 0.15
 BUY_THRESHOLD_BULL = 62   # buy level when SPY is above its EMA50
 BUY_THRESHOLD_BEAR = 70   # stricter buy level when SPY is below its EMA50
 ADD_THRESHOLD = 80        # add more to a stock you already hold
-SELL_THRESHOLD = 40       # sell below this score
+SELL_THRESHOLD = 30       # sell below this score (backtest: 30 beat 40; stops buying/selling at 50/40 churned)
 
 # Risk settings
 ATR_STOP_MULT = 2.5       # stop-loss = price - 2.5 x ATR

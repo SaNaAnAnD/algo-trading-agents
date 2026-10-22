@@ -31,7 +31,7 @@ import math
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -85,13 +85,20 @@ def parse_finite_float(value):
 SETTINGS = {
     "MCP_URL": read_setting("MCP_URL", "http://localhost:8001/mcp", str),
     "LLM_MODEL": read_setting("LLM_MODEL", "groq/openai/gpt-oss-120b", str),
-    "TARGET_INVESTED": read_setting("TARGET_INVESTED", 0.80, parse_finite_float,
+    "TARGET_INVESTED": read_setting("TARGET_INVESTED", 0.95, parse_finite_float,
                                     lambda value: 0 <= value <= 1),
     # "careful": spread TARGET_INVESTED over healthy stocks only (rest stays cash);
     # "signal": the original rule (buy only on a BUY / ADD signal).
     "ALLOCATION": read_setting("ALLOCATION", "careful", str,
                                lambda value: value in ("careful", "signal")),
-    "HEALTHY_MIN_RAMS": read_setting("HEALTHY_MIN_RAMS", 50.0, parse_finite_float),
+    # Backtest: buying at RAMS 60+ and selling below 30 beat 50 / 40 by a wide margin.
+    "HEALTHY_MIN_RAMS": read_setting("HEALTHY_MIN_RAMS", 60.0, parse_finite_float),
+    # Anti-churn rules (calendar days). Stop-losses are never delayed by these.
+    "MIN_HOLD_DAYS": read_setting("MIN_HOLD_DAYS", 3, int, lambda value: value >= 0),
+    "CONFIRM_BUY_DAYS": read_setting("CONFIRM_BUY_DAYS", 1, int, lambda value: value >= 1),
+    "CONFIRM_SELL_DAYS": read_setting("CONFIRM_SELL_DAYS", 2, int, lambda value: value >= 1),
+    "COOLDOWN_DAYS": read_setting("COOLDOWN_DAYS", 2, int, lambda value: value >= 0),
+    "TAKE_HALF_PROFIT": read_setting("TAKE_HALF_PROFIT", False, parse_bool),
     "HEALTHY_MIN_TREND": read_setting("HEALTHY_MIN_TREND", 25.0, parse_finite_float),
     "MIN_TRADE_FRACTION": read_setting("MIN_TRADE_FRACTION", 0.02, parse_finite_float,
                                        lambda value: 0 <= value < 1),
@@ -129,10 +136,10 @@ HIGH_BETA_SYMBOLS = {
 
 def make_llm(model):
     if model.startswith("openrouter/"):
-        return LLM(model=model, api_key=os.getenv("OPENROUTER_API_KEY"), temperature=0.2)
+        return LLM(model=model, api_key=os.getenv("OPENROUTER_API_KEY"), temperature=0.0)
     if model.startswith("ollama/"):
-        return LLM(model=model, base_url=os.getenv("OLLAMA_URL"), temperature=0.2, timeout=300)
-    return LLM(model=model, api_key=os.getenv("GROQ_API_KEY"), temperature=0.2)
+        return LLM(model=model, base_url=os.getenv("OLLAMA_URL"), temperature=0.0, timeout=300)
+    return LLM(model=model, api_key=os.getenv("GROQ_API_KEY"), temperature=0.0)
 
 
 # Main model first, then the backups. Each free Groq model has its own daily
@@ -260,6 +267,14 @@ def capped_split(scores, total, caps):
     return alloc
 
 
+def is_healthy(stock, settings):
+    """True when a stock passes the buy rules (RAMS, trend, news, no SELL signal)."""
+    news = number(stock.get("news_points"), 50.0) / 50.0 - 1.0
+    return (number(stock.get("rams")) >= settings.get("HEALTHY_MIN_RAMS", 50.0)
+            and number(stock.get("trend")) >= settings.get("HEALTHY_MIN_TREND", 25.0)
+            and news > -0.25 and stock.get("signal") != "SELL")
+
+
 def healthy_targets(info, held, equity, settings, skip):
     """Target value per healthy stock (careful mode).
 
@@ -273,10 +288,7 @@ def healthy_targets(info, held, equity, settings, skip):
     for symbol, stock in info.items():
         if symbol in skip:
             continue
-        news = number(stock.get("news_points"), 50.0) / 50.0 - 1.0
-        if (number(stock.get("rams")) >= settings.get("HEALTHY_MIN_RAMS", 50.0)
-                and number(stock.get("trend")) >= settings.get("HEALTHY_MIN_TREND", 25.0)
-                and news > -0.25 and stock.get("signal") != "SELL"):
+        if is_healthy(stock, settings):
             scores[symbol] = number(stock.get("rams"))
             frac = (settings.get("MAX_HIGH_BETA_POSITION_FRACTION", 0.08) if symbol in HIGH_BETA_SYMBOLS
                     else settings.get("MAX_POSITION_FRACTION", 0.12))
@@ -284,14 +296,128 @@ def healthy_targets(info, held, equity, settings, skip):
     return capped_split(scores, settings["TARGET_INVESTED"] * equity, caps)
 
 
-def build_plan(final, positions, account, settings, profit_taken=None, pending_buys=()):
+STATE_FILE = OUTPUTS / "strategy_state.json"
+
+# Used only to give the Risk Manager real exposure numbers instead of guesses.
+SECTORS = {"MU": "Semiconductors", "AVGO": "Semiconductors", "SMCI": "Tech hardware",
+           "AMZN": "Consumer / cloud", "GOOGL": "Communication / tech",
+           "XYZ": "Payments / fintech", "V": "Payments / fintech", "HOOD": "Fintech / brokerage",
+           "FCX": "Materials", "GE": "Industrials"}
+
+
+def _days_between(older, newer):
+    """Whole days from one YYYY-MM-DD date to another (huge number if unreadable)."""
+    try:
+        return (date.fromisoformat(newer) - date.fromisoformat(older)).days
+    except (TypeError, ValueError):
+        return 10 ** 6
+
+
+def load_state():
+    """Memory that survives between runs: entry dates, signal streaks, sell dates, news."""
+    try:
+        data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(state):
+    try:
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        STATE_FILE.write_text(json.dumps(state, indent=1), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def update_signal_days(state, final, settings, today):
+    """Record each day a stock passed the buy rules / showed a SELL signal.
+
+    A day counts once however many runs happen in it; one failed check resets the streak.
+    """
+    for kind in ("buy_days", "sell_days"):
+        state.setdefault(kind, {})
+    for stock in final.get("stocks", []):
+        if "error" in stock or not stock.get("symbol"):
+            continue
+        symbol = str(stock["symbol"]).upper()
+        checks = (("buy_days", is_healthy(stock, settings)),
+                  ("sell_days", stock.get("signal") == "SELL"))
+        for kind, passed in checks:
+            days = set(state[kind].get(symbol, []))
+            state[kind][symbol] = sorted(days | {today})[-5:] if passed else []
+
+
+def signal_confirmed(state, kind, symbol, need):
+    """True when the signal has held on at least `need` different days."""
+    return len(set(state.get(kind, {}).get(symbol, []))) >= need
+
+
+def hold_ok(state, symbol, today, settings):
+    """True when a position has been held for at least MIN_HOLD_DAYS (unknown = old)."""
+    entry = state.get("entry", {}).get(symbol)
+    if not entry:
+        return True
+    return _days_between(entry, today) >= settings.get("MIN_HOLD_DAYS", 0)
+
+
+def sync_entries(state, positions_list, pending_buys, settings, today):
+    """Keep an entry date for every held stock. Stocks first seen are treated as old."""
+    entry = state.setdefault("entry", {})
+    held = {str(p.get("symbol", "")).upper() for p in positions_list}
+    old = (date.fromisoformat(today) - timedelta(days=settings.get("MIN_HOLD_DAYS", 0))).isoformat()
+    for symbol in held:
+        entry.setdefault(symbol, old)
+    for symbol in list(entry):
+        if symbol not in held and symbol not in pending_buys:
+            del entry[symbol]
+
+
+def exposure_report(positions_list, plan, account):
+    """Real exposure numbers (after the proposed orders) for the Risk Manager."""
+    equity = number(account.get("equity"))
+    if equity <= 0:
+        return "Exposure facts unavailable."
+    value = {str(p.get("symbol", "")).upper(): number(p.get("market_value")) for p in positions_list}
+    for order in plan:
+        amount = order["qty"] * order["price"]
+        value[order["symbol"]] = value.get(order["symbol"], 0.0) + (
+            amount if order["side"] == "buy" else -amount)
+    value = {symbol: max(0.0, amount) for symbol, amount in value.items()}
+    invested = sum(value.values())
+    sectors = {}
+    for symbol, amount in value.items():
+        sector = SECTORS.get(symbol, "Other")
+        sectors[sector] = sectors.get(sector, 0.0) + amount
+    high_beta = sum(amount for symbol, amount in value.items() if symbol in HIGH_BETA_SYMBOLS)
+    top = sorted(value.items(), key=lambda kv: -kv[1])[:5]
+    return "\n".join([
+        f"After these orders (computed by code, do not recompute): invested "
+        f"{100 * invested / equity:.0f}% of equity, cash {100 * (1 - invested / equity):.0f}%, "
+        f"high-beta stocks {100 * high_beta / equity:.0f}% (the contest wants at least 30%).",
+        "Largest positions: " + ", ".join(f"{s} {100 * v / equity:.0f}%" for s, v in top if v > 0),
+        "By sector: " + ", ".join(f"{k} {100 * v / equity:.0f}%" for k, v in
+                                  sorted(sectors.items(), key=lambda kv: -kv[1]) if v > 0)])
+
+
+def build_plan(final, positions, account, settings, profit_taken=None, pending_buys=(),
+               state=None, today=None):
     """Build orders from supplied data only; this function makes no network calls.
 
     profit_taken: {symbol: entry price} of positions that already sold half,
     so the half is taken once and the rest keeps a breakeven stop.
     pending_buys: symbols with an unfilled buy order (never buy twice).
+    state/today: run-to-run memory (see load_state). With state=None the anti-churn
+    rules (minimum hold, confirmation, cooldown) are off.
     """
     profit_taken = profit_taken or {}
+    use_state = state is not None
+    state = state or {}
+    today = today or _today()
+    cooling = set()
+    if use_state:
+        cooling = {symbol for symbol, day in state.get("last_sold", {}).items()
+                   if _days_between(day, today) < settings.get("COOLDOWN_DAYS", 0)}
     held = {str(position["symbol"]).upper(): position
             for position in positions.get("positions", [])}
     info = {str(stock.get("symbol", "")).upper(): stock
@@ -319,18 +445,21 @@ def build_plan(final, positions, account, settings, profit_taken=None, pending_b
             "rams": number(stock.get("rams")),
             "stop_loss": stock.get("stop_loss"),
         }
-        took_half = symbol in profit_taken and abs(number(profit_taken[symbol]) - entry) < 0.01
+        took_half = symbol in profit_taken   # keyed by symbol: an average-price change must not reset it
+        signal_ok = (not use_state or (
+            hold_ok(state, symbol, today, settings)
+            and signal_confirmed(state, "sell_days", symbol, settings.get("CONFIRM_SELL_DAYS", 1))))
         if price <= entry - settings["STOP_ATR"] * atr:
             order.update(qty=qty, reason="stop-loss hit")
             stop_sells.append(order)
         elif took_half and price <= entry:
             order.update(qty=qty, reason="breakeven stop after taking profit")
             stop_sells.append(order)
-        elif stock.get("signal") == "SELL":
+        elif stock.get("signal") == "SELL" and signal_ok:
             order.update(qty=qty, reason=f"RAMS {stock.get('rams')} below sell level")
             signal_sells.append(order)
-        elif (not took_half and price >= entry + settings["TAKE_PROFIT_ATR"] * atr
-              and qty >= 2):
+        elif (settings.get("TAKE_HALF_PROFIT", True) and not took_half
+              and price >= entry + settings["TAKE_PROFIT_ATR"] * atr and qty >= 2):
             order.update(qty=qty // 2, reason="take half profit")
             profit_sells.append(order)
 
@@ -346,10 +475,13 @@ def build_plan(final, positions, account, settings, profit_taken=None, pending_b
     buys = []
     if settings.get("ALLOCATION") == "careful":
         targets = healthy_targets(info, held, equity, settings,
-                                  skip=planned_symbols | set(pending_buys))
+                                  skip=planned_symbols | set(pending_buys) | cooling)
         for symbol, target in sorted(targets.items(), key=lambda kv: -kv[1]):
             stock, price = info[symbol], number(info[symbol].get("price"))
             current = number(held[symbol].get("market_value")) if symbol in held else 0.0
+            if use_state and not signal_confirmed(state, "buy_days", symbol,
+                                                  settings.get("CONFIRM_BUY_DAYS", 1)):
+                continue   # the buy signal has not held long enough yet
             if symbol in held and number(held[symbol].get("unrealized_pl")) < 0:
                 continue   # careful: never add to a losing position
             if price <= 0 or target - current < settings.get("MIN_TRADE_FRACTION", 0.02) * equity:
@@ -380,7 +512,7 @@ def build_plan(final, positions, account, settings, profit_taken=None, pending_b
     for stock in sorted(info.values(), key=lambda item: number(item.get("rams")), reverse=True):
         symbol = str(stock.get("symbol", "")).upper()
         price = number(stock.get("price"))
-        if symbol in planned_symbols or symbol in pending_buys or price <= 0:
+        if symbol in planned_symbols or symbol in pending_buys or symbol in cooling or price <= 0:
             continue
         signal = stock.get("signal")
         if signal == "BUY":
@@ -436,10 +568,8 @@ def load_profit_taken(positions_list):
         data = json.loads(PROFIT_FILE.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         data = {}
-    held = {str(p.get("symbol", "")).upper(): number(p.get("avg_entry_price"))
-            for p in positions_list}
-    return {sym: entry for sym, entry in data.items()
-            if sym in held and abs(number(entry) - held[sym]) < 0.01}
+    held = {str(p.get("symbol", "")).upper() for p in positions_list}
+    return {sym: entry for sym, entry in data.items() if sym in held}
 
 
 def save_profit_taken(data):
@@ -532,7 +662,10 @@ def run_crew(crew):
 def limit_price(order):
     """Calculate a buffered limit price; orders are always limit orders."""
     direction = 1 if order["side"] == "buy" else -1
-    return round(order["price"] * (1 + direction * SETTINGS["LIMIT_BUFFER"]), 2)
+    buffer = SETTINGS["LIMIT_BUFFER"]
+    if order["side"] == "sell" and "stop" in str(order.get("reason", "")):
+        buffer = max(buffer, 0.015)   # a stop-loss exit must fill even in a fast drop
+    return round(order["price"] * (1 + direction * buffer), 2)
 
 
 def order_line(order, index, total):
@@ -591,6 +724,7 @@ def main():
     symbols, regime, buy_threshold = [], "unavailable", "unavailable"
     execution_entries = []
     run_status = "Run ended before orders were selected."
+    state, today = {}, _today()
     try:
         symbols = load_symbols()
         print(f"AI models today: {model_chain_text()}")
@@ -619,6 +753,18 @@ def main():
         pending_buys = {str(o.get("symbol", "")).upper() for o in open_orders
                         if "buy" in str(o.get("side", "")).lower()}
         profit_taken = load_profit_taken(positions_list)
+        state = load_state()
+        sync_entries(state, positions_list, pending_buys, SETTINGS, today)
+        if not dry_run:
+            # Every share must have a live (GTC) protective stop; DAY stops expire overnight.
+            try:
+                stops = mcp("ensure_protective_stops")
+                for line in (stops.get("actions", []) if isinstance(stops, dict) else []):
+                    print(f"   Stop check: {line}")
+                    execution_entries.append(f"Stop check: {line}")
+            except Exception as error:
+                print(f"   Stop check skipped: {error}")
+        held_before = {str(p.get("symbol", "")).upper(): number(p.get("qty")) for p in positions_list}
         ai_ok = True
         watched = set(symbols)
         for position in positions_list:
@@ -659,8 +805,9 @@ def main():
             **common)
         trader_agent = Agent(role="Portfolio Manager and Trader",
             goal="Give the final list of orders to execute.",
-            backstory=("You make the final decisions for a careful investor in a 16-day "
-                       "paper-trading contest: about 80% invested in healthy stocks, 20% cash."),
+            backstory=("You make the final decisions for an investor in a short paper-trading "
+                       f"contest judged on % gain: about {100 * SETTINGS['TARGET_INVESTED']:.0f}% "
+                       "invested in healthy stocks. Exits come from fixed rules and always run."),
             **common)
 
         # News and Technical work in parallel, followed by the Market summary.
@@ -705,6 +852,12 @@ def main():
             for key, value in news_data.items():
                 if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
                     news_scores[str(key).upper()] = float(value)
+            # Smooth with the previous run so one odd AI answer cannot swing a score.
+            previous = state.get("news", {}) if isinstance(state.get("news"), dict) else {}
+            for key in list(news_scores):
+                if key in previous and isinstance(previous[key], (int, float)):
+                    news_scores[key] = round(0.5 * float(previous[key]) + 0.5 * news_scores[key], 2)
+            state["news"] = dict(news_scores)
         save(folder, "newsSentimentAgent", timestamp,
              "# News Sentiment Agent\n\n## Headlines\n" + news_text +
              "\n\n## Scores\n```json\n" + json.dumps(news_scores, indent=2) + "\n```\n")
@@ -729,8 +882,11 @@ def main():
         regime = final.get("regime", regime)
         buy_threshold = final.get("buy_threshold", buy_threshold)
         print(rams_table(final, news_scores))
+        update_signal_days(state, final, SETTINGS, today)
+        save_state(state)
         plan = build_plan(final, positions, account, SETTINGS,
-                          profit_taken=profit_taken, pending_buys=pending_buys)
+                          profit_taken=profit_taken, pending_buys=pending_buys,
+                          state=state, today=today)
         if pending_buys:
             print(f"   Waiting for earlier buy order(s) to fill: {', '.join(sorted(pending_buys))}")
         if not plan:
@@ -756,16 +912,20 @@ def main():
             description=(f"Account: {json.dumps(account)}\nOpen positions: {pos_text}\n"
                          f"Regime: {regime}\nNews scores: {json.dumps(news_scores)}\n\n"
                          f"Proposed orders:\n{plan_text}\n\n"
+                         f"Exposure facts:\n{exposure_report(positions_list, plan, account)}\n\n"
                          "How to read the numbers: RAMS is a 0-100 STRENGTH score (higher is better; "
-                         "buys go only to healthy stocks: RAMS 50+, not in a downtrend, no bad news; "
-                         "20% of equity always stays in cash). Overbought is "
+                         f"buys go only to healthy stocks: RAMS {SETTINGS['HEALTHY_MIN_RAMS']:.0f}+, "
+                         "not in a downtrend, no bad news). Overbought is "
                          "judged by RSI only: extremely overbought means RSI 80 or more. Very bad "
                          f"news means a news score of {VETO_NEWS} or lower. Sizes and the 6% "
                          "protective stop were already set by the risk rules.\n"
-                         "The investor is careful but wants about 80% invested, and cash earns "
-                         "nothing. Review each order and APPROVE it unless one of these applies: "
-                         "very bad news, RSI 80 or more, or more than 40% of equity in one sector. "
-                         "Give a short reason for each."),
+                         "SELL orders reduce risk and come from fixed rules: always APPROVE every "
+                         "SELL, never reject one. Review BUY orders only.\n"
+                         f"The investor wants about {100 * SETTINGS['TARGET_INVESTED']:.0f}% invested "
+                         "and cash earns nothing. APPROVE each BUY unless one of these applies: "
+                         "very bad news, RSI 80 or more, or the exposure facts above show more than "
+                         "40% of equity in one sector. Use the exposure facts exactly as given; "
+                         "do not make up numbers. Give a short reason for each."),
             expected_output="A markdown list: each order APPROVED or REJECTED with a reason.",
             agent=risk_agent)
         trade_task = Task(
@@ -803,9 +963,10 @@ def main():
                               f"RSI {number(order.get('rsi')):.1f}); keeping the buy.")
                         execution_entries.append(f"{order['symbol']} buy kept: AI veto had no evidence")
                         chosen.append(i)
-        # Protective exits are never skipped, whatever the Trader chose.
+        # Every SELL comes from fixed rules (stop, weak signal, profit target) and is
+        # never skipped, whatever the AI said: it only lowers risk.
         chosen = sorted(set(chosen) | {i for i, order in enumerate(plan, 1)
-                                       if order["side"] == "sell" and "stop" in order["reason"]})
+                                       if order["side"] == "sell"})
         final_orders = [plan[index - 1] for index in chosen]
         save(folder, "riskManagerAgent", timestamp,
              "# Risk Manager Agent\n\n## Proposed orders\n" + plan_text +
@@ -848,6 +1009,11 @@ def main():
                                   if str(p.get("symbol", "")).upper() == order["symbol"]), 0)
                     profit_taken[order["symbol"]] = entry
                     save_profit_taken(profit_taken)
+                if order["side"] == "sell" and order["qty"] >= held_before.get(order["symbol"], 0):
+                    state.setdefault("last_sold", {})[order["symbol"]] = today   # starts the cooldown
+                if order["side"] == "buy" and order["symbol"] not in held_before:
+                    state.setdefault("entry", {})[order["symbol"]] = today       # starts the minimum hold
+                save_state(state)
                 record = line + f" - {status}"
                 print(f"   {status}")
                 execution_entries.append(record)
