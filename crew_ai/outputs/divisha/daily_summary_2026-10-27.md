@@ -1,6 +1,6 @@
 # Trading session 27 Oct 2026 (US market day)
 
-Runs: 1 (one every 150 minutes, full CrewAI crew in auto mode)
+Runs: 2 (one every 150 minutes, full CrewAI crew in auto mode)
 
 | | Start of session | End of session |
 |---|---|---|
