@@ -5,6 +5,7 @@ import socket
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -19,6 +20,7 @@ from alpaca.data.timeframe import TimeFrame
 from alpaca.data.enums import DataFeed
 
 load_dotenv()
+st.cache_data.clear()
 
 ROOT = Path(__file__).resolve().parent
 STOCKS_FILE = ROOT / "crew_ai" / "clients" / "my_stocks.txt"
@@ -41,7 +43,9 @@ DEFAULT_STOCKS = [
 INDICATOR_ORDER = ["Trend", "Momentum", "Volume", "Breakout", "News"]
 MEMBERS = ["sana", "divisha", "vani"]
 TEAM_STOCK_SECTORS = TEAM_DIR / "stock_sectors.csv"
-APP_PASSWORD = os.getenv("APP_PASSWORD", "")
+APP_PASSWORD = os.getenv("APP_PASSWORD", "").strip()
+MEMBER_COLORS = {"sana": "#5DA5DA", "divisha": "#F17CB0", "vani": "#60BD68"}
+SPY_COLOR = "#9aa0a6"
 
 st.set_page_config(page_title="Team Trading Dashboard", page_icon="📊", layout="wide")
 
@@ -56,6 +60,23 @@ def safe_float(value):
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def clean_numeric_string(value):
+    if pd.isna(value):
+        return None
+    if isinstance(value, str):
+        cleaned = value.strip().replace(",", "").replace("$", "").replace("%", "")
+        if cleaned.startswith("(") and cleaned.endswith(")"):
+            cleaned = "-" + cleaned[1:-1]
+        if cleaned in ("", "-"):
+            return None
+        return cleaned
+    return value
+
+
+def coerce_numeric_series(series):
+    return pd.to_numeric(series.map(clean_numeric_string), errors="coerce")
 
 
 @st.cache_data(show_spinner=False)
@@ -212,15 +233,23 @@ def load_team_equity_data() -> dict[str, pd.DataFrame]:
     out = {}
     for member in MEMBERS:
         df = read_member_file(member, "equity")
-        if df is not None and not df.empty:
-            temp = df.copy()
-            if "date" in temp.columns:
-                temp["date"] = pd.to_datetime(temp["date"]).dt.date
-            if "equity" in temp.columns:
-                temp["equity"] = pd.to_numeric(temp["equity"], errors="coerce")
-            out[member] = temp.dropna(subset=["equity"]).sort_values("date")
-        else:
+        if df is None or df.empty:
             out[member] = pd.DataFrame(columns=["date", "equity"])
+            continue
+        temp = df.copy()
+        temp.columns = [str(c).strip().lower().replace(" ", "_") for c in temp.columns]
+        if "account_value" in temp.columns and "equity" not in temp.columns:
+            temp = temp.rename(columns={"account_value": "equity"})
+        if "portfolio_value" in temp.columns and "equity" not in temp.columns:
+            temp = temp.rename(columns={"portfolio_value": "equity"})
+        if "date" not in temp.columns:
+            out[member] = pd.DataFrame(columns=["date", "equity"])
+            continue
+        temp["date"] = pd.to_datetime(temp["date"], errors="coerce")
+        if "equity" in temp.columns:
+            temp["equity"] = coerce_numeric_series(temp["equity"])
+        out[member] = temp.dropna(subset=["date", "equity"]).sort_values("date")
+        out[member]["date"] = out[member]["date"].dt.date
     return out
 
 
@@ -233,10 +262,19 @@ def load_team_trade_data() -> dict[str, pd.DataFrame]:
             out[member] = pd.DataFrame(columns=["date", "symbol", "side", "qty", "price", "dollar_value"])
             continue
         temp = df.copy()
+        temp.columns = [str(c).strip().lower().replace(" ", "_") for c in temp.columns]
+        for src, target in {"filled_price": "price", "avg_fill_price": "price", "trade_price": "price", "order_price": "price"}.items():
+            if src in temp.columns and target in temp.columns:
+                temp[target] = temp[target].fillna(temp[src])
+        if "date" not in temp.columns or "symbol" not in temp.columns:
+            out[member] = pd.DataFrame(columns=["date", "symbol", "side", "qty", "price", "dollar_value"])
+            continue
         temp["member"] = member
         temp["date"] = pd.to_datetime(temp["date"], errors="coerce")
-        temp["qty"] = pd.to_numeric(temp["qty"], errors="coerce")
-        temp["price"] = pd.to_numeric(temp["price"], errors="coerce")
+        temp["qty"] = coerce_numeric_series(temp.get("qty", pd.Series(index=temp.index, dtype=float)))
+        temp["price"] = coerce_numeric_series(temp.get("price", pd.Series(index=temp.index, dtype=float)))
+        if "side" in temp.columns:
+            temp["side"] = temp["side"].astype(str).str.split(".").str[-1].str.lower()
         temp["dollar_value"] = temp["qty"].abs() * temp["price"]
         out[member] = temp.dropna(subset=["date", "symbol"]).sort_values("date")
     return out
@@ -245,17 +283,47 @@ def load_team_trade_data() -> dict[str, pd.DataFrame]:
 @st.cache_data(show_spinner=False)
 def load_team_position_data() -> dict[str, pd.DataFrame]:
     out = {}
+    latest_prices = fetch_latest_trade_prices([symbol for symbol in load_stock_sectors()["symbol"].dropna().astype(str).str.upper().unique()])
     for member in MEMBERS:
         df = read_member_file(member, "positions")
+        fallback_path = TEAM_DIR / f"{member}_last_positions.csv"
+        if (df is None or df.empty) and fallback_path.exists():
+            try:
+                fallback = pd.read_csv(fallback_path)
+            except Exception:
+                fallback = None
+            if fallback is not None and not fallback.empty:
+                df = fallback
         if df is None or df.empty:
             out[member] = pd.DataFrame(columns=["symbol", "qty", "market_value", "unrealized_pl", "unrealized_plpc", "avg_entry_price", "current_price"])
             continue
         temp = df.copy()
-        temp["symbol"] = temp["symbol"].astype(str).str.upper()
-        temp["qty"] = pd.to_numeric(temp["qty"], errors="coerce")
-        temp["market_value"] = pd.to_numeric(temp["market_value"], errors="coerce")
-        temp["unrealized_pl"] = pd.to_numeric(temp["unrealized_pl"], errors="coerce")
-        temp["unrealized_plpc"] = pd.to_numeric(temp["unrealized_plpc"], errors="coerce")
+        temp.columns = [str(c).strip().lower().replace(" ", "_") for c in temp.columns]
+        if "symbol" in temp.columns:
+            temp["symbol"] = temp["symbol"].astype(str).str.upper()
+        for col in ["qty", "market_value", "unrealized_pl", "unrealized_plpc", "avg_entry_price", "current_price"]:
+            if col in temp.columns:
+                temp[col] = coerce_numeric_series(temp[col])
+
+        if "current_price" in temp.columns:
+            mask = temp["current_price"].isna() & temp["symbol"].isin(latest_prices.keys())
+            temp.loc[mask, "current_price"] = temp.loc[mask, "symbol"].map(latest_prices)
+        if "market_value" in temp.columns:
+            qty = temp["qty"] if "qty" in temp.columns else pd.Series(0.0, index=temp.index)
+            current_price = temp["current_price"] if "current_price" in temp.columns else pd.Series(pd.NA, index=temp.index)
+            mask = temp["market_value"].isna() & qty.notna() & current_price.notna()
+            temp.loc[mask, "market_value"] = qty[mask] * current_price[mask]
+        if "unrealized_pl" in temp.columns:
+            qty = temp["qty"] if "qty" in temp.columns else pd.Series(0.0, index=temp.index)
+            current_price = temp["current_price"] if "current_price" in temp.columns else pd.Series(pd.NA, index=temp.index)
+            avg_entry_price = temp["avg_entry_price"] if "avg_entry_price" in temp.columns else pd.Series(pd.NA, index=temp.index)
+            mask = temp["unrealized_pl"].isna() & qty.notna() & current_price.notna() & avg_entry_price.notna()
+            temp.loc[mask, "unrealized_pl"] = (current_price[mask] - avg_entry_price[mask]) * qty[mask]
+        if "unrealized_plpc" in temp.columns:
+            avg_entry_price = temp["avg_entry_price"] if "avg_entry_price" in temp.columns else pd.Series(pd.NA, index=temp.index)
+            unrealized_pl = temp["unrealized_pl"] if "unrealized_pl" in temp.columns else pd.Series(pd.NA, index=temp.index)
+            mask = temp["unrealized_plpc"].isna() & avg_entry_price.notna() & avg_entry_price.ne(0) & unrealized_pl.notna()
+            temp.loc[mask, "unrealized_plpc"] = unrealized_pl[mask] / (avg_entry_price[mask] * (temp.loc[mask, "qty"] if "qty" in temp.columns else pd.Series(1.0, index=temp.index)[mask]))
         out[member] = temp
     return out
 
@@ -283,10 +351,37 @@ def fetch_daily_prices(symbols: list[str]) -> pd.DataFrame:
         return pd.DataFrame(columns=["symbol", "date", "close"])
 
     df = bars.reset_index()
-    df.columns = ["symbol", "date", "open", "high", "low", "close", "volume"]
+    df.columns = ["symbol", "date", "open", "high", "low", "close", "volume", "trade_count", "vwap"]
     df["symbol"] = df["symbol"].astype(str).str.upper()
     df["date"] = pd.to_datetime(df["date"]).dt.date
-    return df[["symbol", "date", "close"]]
+    return df[["symbol", "date", "close"]].dropna(subset=["close"])
+
+
+@st.cache_data(show_spinner=False)
+def fetch_latest_trade_prices(symbols: list[str]) -> dict[str, float]:
+    api_key = os.getenv("ALPACA_API_KEY")
+    api_secret = os.getenv("ALPACA_SECRET_KEY")
+    unique_symbols = sorted({s.upper() for s in symbols if s and str(s).strip()})
+    if not unique_symbols or not api_key or not api_secret:
+        return {}
+
+    try:
+        from alpaca.data.requests import StockLatestTradeRequest
+        client = StockHistoricalDataClient(api_key, api_secret)
+        request = StockLatestTradeRequest(symbol_or_symbols=unique_symbols)
+        latest = client.get_stock_latest_trade(request)
+    except Exception:
+        return {}
+
+    prices = {}
+    for symbol, trade in latest.items():
+        value = getattr(trade, "price", None)
+        if value is not None:
+            try:
+                prices[str(symbol).upper()] = float(value)
+            except (TypeError, ValueError):
+                pass
+    return prices
 
 
 def to_numeric_series(series):
@@ -305,35 +400,78 @@ def compute_cumulative_return(series: pd.Series) -> pd.Series:
     return ((values / base) - 1) * 100
 
 
+def member_last_date(member: str, file_name: str = "equity") -> str | None:
+    path = TEAM_DIR / f"{member}_{file_name}.csv"
+    if not path.exists():
+        return None
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        return None
+    if df.empty or "date" not in df.columns:
+        return None
+    last_date = pd.to_datetime(df["date"], errors="coerce").dropna().max()
+    if pd.isna(last_date):
+        return None
+    return pd.Timestamp(last_date).strftime("%Y-%m-%d")
+
+
+def member_data_source_label(member: str) -> str:
+    if member == "vani":
+        return "Live from Alpaca"
+    if member == "sana":
+        return "From Sana's Alpaca exports"
+    if member == "divisha":
+        return "From Divisha's trading logs"
+    member_dir = OUTPUTS_DIR / member
+    latest_date = None
+    if member_dir.exists():
+        files = [p for p in member_dir.rglob("*") if p.is_file()]
+        if files:
+            latest_date = max(p.stat().st_mtime for p in files)
+    if latest_date is not None:
+        return f"From team logs, last updated {datetime.fromtimestamp(latest_date, tz=timezone.utc).strftime('%Y-%m-%d')}"
+    return "From team logs"
+
+
 def build_member_summary(member: str):
     equity_df = load_team_equity_data().get(member)
     trades_df = load_team_trade_data().get(member)
+    positions_df = load_team_position_data().get(member)
     if equity_df is None or equity_df.empty:
         return {
             "member": member,
-            "account_value": "No data yet",
-            "return_pct": "No data yet",
-            "trade_count": 0,
-            "trading_days": 0,
+            "account_value": "Data not uploaded yet",
+            "pnl": "Data not uploaded yet",
+            "return_pct": "Data not uploaded yet",
+            "trade_count": "Not uploaded",
+            "source": member_data_source_label(member),
+            "last_date": None,
             "status": "No data yet",
         }
 
     equity = equity_df["equity"].dropna()
     if equity.empty:
-        return {"member": member, "account_value": "No data yet", "return_pct": "No data yet", "trade_count": 0, "trading_days": 0, "status": "No data yet"}
+        return {"member": member, "account_value": "Data not uploaded yet", "pnl": "Data not uploaded yet", "return_pct": "Data not uploaded yet", "trade_count": "Not uploaded", "source": member_data_source_label(member), "last_date": None, "status": "No data yet"}
 
-    start = equity.iloc[0]
-    latest = equity.iloc[-1]
-    pct = ((latest / start) - 1) * 100 if start else 0
-    trade_count = int(len(trades_df)) if trades_df is not None else 0
-    trading_days = int(equity_df["date"].nunique()) if "date" in equity_df.columns else 0
+    latest = float(equity.iloc[-1])
+    pnl = latest - 100000.0
+    pct = ((latest / 100000.0) - 1) * 100
+    if trades_df is None or trades_df.empty:
+        trade_count = "Not uploaded"
+    else:
+        trade_count = int(len(trades_df))
+    last_date = pd.to_datetime(equity_df["date"].max()).strftime("%Y-%m-%d") if "date" in equity_df.columns and not equity_df.empty else None
     return {
         "member": member,
         "account_value": f"${latest:,.2f}",
+        "pnl": f"${pnl:,.2f}",
         "return_pct": f"{pct:.2f}%",
         "trade_count": trade_count,
-        "trading_days": trading_days,
+        "source": member_data_source_label(member),
+        "last_date": last_date,
         "status": "OK",
+        "portfolio_status": "All in cash" if (positions_df is None or positions_df.empty) else "Portfolio loaded",
     }
 
 
@@ -417,63 +555,103 @@ def render_team_overview():
         with cards[i]:
             st.markdown(f"### {member.title()}")
             if summary["status"] == "No data yet":
-                st.info("No data yet")
+                st.caption(summary["source"])
+                st.info("Data not uploaded yet")
             else:
+                st.caption(summary["source"])
+                if summary.get("last_date"):
+                    st.caption(f"Last date: {summary['last_date']}")
                 st.metric("Account value", summary["account_value"])
-                st.metric("Return", summary["return_pct"])
+                st.metric("P/L ($)", summary["pnl"])
+                st.metric("Return %", summary["return_pct"])
                 st.metric("Trades", summary["trade_count"])
-                st.metric("Trading days", summary["trading_days"])
     with cards[-1]:
         st.markdown("### Group")
-        values = [float(summary["account_value"].replace('$', '').replace(',', '')) for summary in summaries.values() if summary["status"] == "OK"]
-        returns = []
-        for summary in summaries.values():
-            if summary["status"] == "OK":
-                returns.append(float(summary["return_pct"].replace('%', '')))
-        st.metric("Member account value", f"${sum(values):,.2f}")
-        st.metric("Group avg return", f"{(sum(returns) / len(returns)) if returns else 0:.2f}%")
-        st.metric("Members with data", len(values))
+        ok_summaries = [summary for summary in summaries.values() if summary["status"] == "OK"]
+        if ok_summaries:
+            values = [float(summary["account_value"].replace('$', '').replace(',', '')) for summary in ok_summaries]
+            returns = [float(summary["return_pct"].replace('%', '')) for summary in ok_summaries]
+            st.metric("Combined account value", f"${sum(values):,.2f}")
+            st.metric("Group avg return", f"{(sum(returns) / len(returns)):.2f}%")
+            st.metric("Members with data", len(ok_summaries))
+            if len(ok_summaries) < 2:
+                st.caption("Group average appears when at least two members have uploaded data.")
+        else:
+            st.info("Data not uploaded yet")
 
-    price_df = fetch_daily_prices(["SPY"] + list(set([x for _, row in load_stock_sectors().iterrows() for x in [row["symbol"], row["sector_etf"]]])))
-    spy_prices = price_df[price_df["symbol"] == "SPY"].sort_values("date") if not price_df.empty else pd.DataFrame(columns=["date", "close"])
+    spy_prices = fetch_daily_prices(["SPY"]).copy()
     if not spy_prices.empty:
-        spy_prices["pct_return"] = compute_cumulative_return(spy_prices["close"])
-        spy_prices["date"] = pd.to_datetime(spy_prices["date"])
+        spy_prices = spy_prices[spy_prices["symbol"] == "SPY"].sort_values("date")
+        if not spy_prices.empty:
+            spy_prices["pct_return"] = compute_cumulative_return(spy_prices["close"])
+            spy_prices["date"] = pd.to_datetime(spy_prices["date"])
+    else:
+        spy_prices = pd.DataFrame(columns=["date", "close", "pct_return"])
+
     fig = go.Figure()
     for member in MEMBERS:
         equity_df = load_team_equity_data().get(member)
         if equity_df is None or equity_df.empty:
             continue
         temp = equity_df.copy()
-        temp["date"] = pd.to_datetime(temp["date"])
-        temp = temp.sort_values("date")
-        temp["pct_return"] = compute_cumulative_return(temp["equity"])
-        fig.add_trace(go.Scatter(x=temp["date"], y=temp["pct_return"], mode="lines", name=member.title()))
-    if not spy_prices.empty:
-        fig.add_trace(go.Scatter(x=spy_prices["date"], y=spy_prices["pct_return"], mode="lines", line=dict(dash="dash"), name="SPY"))
-    fig.update_layout(title="Member return vs SPY", template=plotly_template, xaxis_title="Date", yaxis_title="Cumulative return (%)", legend_title="Member")
-    st.plotly_chart(fig, use_container_width=True)
+        temp["date"] = pd.to_datetime(temp["date"], errors="coerce")
+        temp = temp.dropna(subset=["date", "equity"]).sort_values("date")
+        if temp.empty:
+            continue
+        temp["pct_return"] = ((temp["equity"] / 100000.0) - 1) * 100
+        fig.add_trace(go.Scatter(x=temp["date"], y=temp["pct_return"], mode="lines", name=member.title(), line=dict(color=MEMBER_COLORS.get(member, "#7F8C8D"), width=3)))
+    if not spy_prices.empty and not spy_prices["pct_return"].dropna().empty:
+        fig.add_trace(go.Scatter(x=spy_prices["date"], y=spy_prices["pct_return"], mode="lines", name="SPY", line=dict(color=SPY_COLOR, width=2, dash="dash")))
+    fig.update_layout(title="Return % over time by member vs SPY", template=plotly_template, xaxis_title="Date", yaxis_title="Return %", legend_title="Member", hovermode="x unified")
+    st.plotly_chart(fig, width="stretch")
+    st.caption("Each member's return is measured against the $100,000 starting capital; the benchmark SPY is shaded grey.")
 
     member_returns = []
     for member in MEMBERS:
         equity_df = load_team_equity_data().get(member)
         if equity_df is None or equity_df.empty:
             continue
-        start = equity_df["equity"].dropna().iloc[0]
-        latest = equity_df["equity"].dropna().iloc[-1]
-        member_returns.append({"member": member, "return_pct": ((latest / start) - 1) * 100 if start else 0})
+        latest = equity_df["equity"].dropna().iloc[-1] if not equity_df.empty else None
+        if latest is None or pd.isna(latest):
+            continue
+        member_returns.append({"member": member, "return_pct": ((latest / 100000.0) - 1) * 100})
     if member_returns:
-        spy_base = spy_prices["close"].dropna().iloc[0] if not spy_prices.empty else None
-        spy_last = spy_prices["close"].dropna().iloc[-1] if not spy_prices.empty else None
+        spy_base = spy_prices["close"].dropna().iloc[0] if not spy_prices.empty and not spy_prices["close"].dropna().empty else None
+        spy_last = spy_prices["close"].dropna().iloc[-1] if not spy_prices.empty and not spy_prices["close"].dropna().empty else None
         spy_return = ((spy_last / spy_base) - 1) * 100 if spy_base and spy_last else 0
-        group_avg = sum(item["return_pct"] for item in member_returns) / len(member_returns)
+        group_avg = sum(item["return_pct"] for item in member_returns) / len(member_returns) if member_returns else 0
         return_df = pd.DataFrame(member_returns)
-        return_df.loc[len(return_df)] = {"member": "Group avg", "return_pct": group_avg}
-        return_df.loc[len(return_df)] = {"member": "SPY", "return_pct": spy_return}
-        bar_fig = px.bar(return_df, x="member", y="return_pct", color="member", title="Total return by member vs group avg and SPY", template=plotly_template)
-        st.plotly_chart(bar_fig, use_container_width=True)
+        if len(member_returns) >= 2:
+            return_df = pd.concat([
+                return_df,
+                pd.DataFrame([{"member": "Group avg", "return_pct": group_avg}, {"member": "SPY", "return_pct": spy_return}]),
+            ], ignore_index=True)
+        else:
+            return_df = pd.concat([
+                return_df,
+                pd.DataFrame([{"member": "SPY", "return_pct": spy_return}]),
+            ], ignore_index=True)
+        bar_fig = px.bar(return_df, x="member", y="return_pct", color="member", title="Final return by member vs SPY", labels={"member": "Member", "return_pct": "Return %"}, template=plotly_template, color_discrete_map={**MEMBER_COLORS, "Group avg": "#D0D0D0", "SPY": SPY_COLOR})
+        bar_fig.update_layout(xaxis_title="Member", yaxis_title="Return %")
+        st.plotly_chart(bar_fig, width="stretch")
+        st.caption("Each member's return is measured to their own last available date; Divisha is shown through 21 Oct and all returns are benchmarked against $100,000.")
     else:
-        st.info("No data yet")
+        st.info("Data not uploaded yet")
+
+    data_rows = [summary for summary in summaries.values() if summary["status"] == "OK"]
+    if data_rows:
+        best = max(data_rows, key=lambda x: float(x["return_pct"].replace('%', '')))
+        worst = min(data_rows, key=lambda x: float(x["return_pct"].replace('%', '')))
+        avg_return = sum(float(x["return_pct"].replace('%', '')) for x in data_rows) / len(data_rows)
+        st.markdown("### Insights")
+        st.info(
+            f"{best['member'].title()} had the strongest return at {best['return_pct']}, while {worst['member'].title()} was lowest at {worst['return_pct']}. "
+            f"The average return across members with data is {avg_return:.2f}%. "
+            f"The combined member portfolio stands at ${sum(float(summary['account_value'].replace('$','').replace(',','')) for summary in data_rows):,.2f}."
+        )
+    else:
+        st.markdown("### Insights")
+        st.info("No team member data has been uploaded yet.")
 
 
 def render_stock_activity():
@@ -484,34 +662,45 @@ def render_stock_activity():
 
     trade_days = activity["trades_per_day"].copy()
     trade_days["date"] = pd.to_datetime(trade_days["date"])
-    fig1 = px.line(trade_days, x="date", y="trades", color="member", title="Trades per day by member", template=plotly_template)
-    st.plotly_chart(fig1, use_container_width=True)
+    fig1 = px.line(trade_days, x="date", y="trades", color="member", title="Trades per day by member", labels={"date": "Date", "trades": "Trades", "member": "Member"}, template=plotly_template, color_discrete_map=MEMBER_COLORS)
+    fig1.update_layout(xaxis_title="Date", yaxis_title="Trades")
+    st.plotly_chart(fig1, width="stretch")
+    st.caption("Daily trade count per member, based on the filled orders recorded in each member's trade log.")
 
     heatmap_df = activity["heatmap"].copy()
     if not heatmap_df.empty:
         heat = heatmap_df.pivot_table(index="member", columns="symbol", values="trades", aggfunc="sum").fillna(0)
-        fig2 = px.imshow(heat, text_auto=True, aspect="auto", color_continuous_scale="Viridis", title="Trades by member and stock", template=plotly_template)
-        st.plotly_chart(fig2, use_container_width=True)
+        fig2 = px.imshow(heat, text_auto=True, aspect="auto", color_continuous_scale="Viridis", title="Trades by member and stock", labels={"x": "Stock", "y": "Member", "color": "Trades"}, template=plotly_template)
+        st.plotly_chart(fig2, width="stretch")
+        st.caption("Heatmap of filled trade counts by member and stock. Darker cells mean more trades.")
 
     buy_sell = activity["buys_vs_sells"].copy()
     if not buy_sell.empty:
-        fig3 = px.bar(buy_sell, x="member", y="count", color="side", barmode="group", title="Buys vs sells per member", template=plotly_template)
-        st.plotly_chart(fig3, use_container_width=True)
+        fig3 = px.bar(buy_sell, x="member", y="count", color="side", barmode="group", title="Buys vs sells per member", labels={"member": "Member", "count": "Orders", "side": "Side"}, template=plotly_template)
+        fig3.update_layout(xaxis_title="Member", yaxis_title="Orders")
+        st.plotly_chart(fig3, width="stretch")
+        st.caption("Buy and sell counts from each member's trade log.")
 
     dollar_amt = activity["dollar_amount"].copy()
     if not dollar_amt.empty:
-        fig4 = px.bar(dollar_amt, x="member", y="dollar_amount", color="member", title="Dollar amount traded per member", template=plotly_template)
-        st.plotly_chart(fig4, use_container_width=True)
+        fig4 = px.bar(dollar_amt, x="member", y="dollar_amount", color="member", title="Dollar amount traded per member", labels={"member": "Member", "dollar_amount": "$ Traded"}, template=plotly_template, color_discrete_map=MEMBER_COLORS)
+        fig4.update_layout(xaxis_title="Member", yaxis_title="$ Traded")
+        st.plotly_chart(fig4, width="stretch")
+        st.caption("Total notional value of each member's filled trades.")
 
     stock_counts = activity["distinct_stocks"].copy()
     if not stock_counts.empty:
-        fig5 = px.bar(stock_counts, x="member", y="stock_count", color="member", title="Different stocks traded by member", template=plotly_template)
-        st.plotly_chart(fig5, use_container_width=True)
+        fig5 = px.bar(stock_counts, x="member", y="stock_count", color="member", title="Different stocks traded by member", labels={"member": "Member", "stock_count": "Distinct stocks"}, template=plotly_template, color_discrete_map=MEMBER_COLORS)
+        fig5.update_layout(xaxis_title="Member", yaxis_title="Distinct stocks")
+        st.plotly_chart(fig5, width="stretch")
+        st.caption("Number of unique symbols each member traded.")
 
     avg_hold = activity["avg_holding_days"].copy()
     if not avg_hold.empty:
-        fig6 = px.bar(avg_hold, x="member", y="avg_holding_days", color="member", title="Average holding time per member", template=plotly_template)
-        st.plotly_chart(fig6, use_container_width=True)
+        fig6 = px.bar(avg_hold, x="member", y="avg_holding_days", color="member", title="Average holding time per member", labels={"member": "Member", "avg_holding_days": "Days"}, template=plotly_template, color_discrete_map=MEMBER_COLORS)
+        fig6.update_layout(xaxis_title="Member", yaxis_title="Days held")
+        st.plotly_chart(fig6, width="stretch")
+        st.caption("Average time between a buy and the matched sell for each member.")
 
 
 @st.cache_data(show_spinner=False)
@@ -580,16 +769,16 @@ def render_vs_industry():
     for metric in ["stock_return", "sector_return"]:
         fig.add_trace(go.Bar(name=metric.replace('_', ' ').title(), x=comparison["symbol"], y=comparison[metric], marker_color="#7f8c8d" if metric == "sector_return" else "#3a86ff"))
     fig.update_layout(title="Stock vs sector performance", barmode="group", template=plotly_template)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     sector_summary = comparison.groupby("sector").agg(stock_return=("stock_return", "mean"), sector_return=("sector_return", "mean")).reset_index()
     fig2 = px.bar(sector_summary, x="sector", y=["stock_return", "sector_return"], title="Sector level return summary", template=plotly_template, barmode="group")
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, width="stretch")
 
     table_df = comparison[["member", "symbol", "sector", "sector_etf", "stock_return", "sector_return", "beat_stock", "beat_sector"]].copy()
     table_df["beat_stock"] = table_df["beat_stock"].map({True: "Yes", False: "No"})
     table_df["beat_sector"] = table_df["beat_sector"].map({True: "Yes", False: "No"})
-    st.dataframe(table_df, use_container_width=True)
+    st.dataframe(table_df, width="stretch")
 
 
 def render_risk():
@@ -599,54 +788,98 @@ def render_risk():
         if equity_df is None or equity_df.empty:
             continue
         temp = equity_df.copy()
-        temp["date"] = pd.to_datetime(temp["date"])
-        temp = temp.sort_values("date")
+        temp["date"] = pd.to_datetime(temp["date"], errors="coerce")
+        temp = temp.dropna(subset=["date"]).sort_values("date")
+        temp["equity"] = coerce_numeric_series(temp["equity"])
+        temp = temp.dropna(subset=["equity"])
+        if temp.empty:
+            continue
         temp["pct_change"] = temp["equity"].pct_change().fillna(0)
         temp["drawdown"] = (temp["equity"] / temp["equity"].cummax() - 1) * 100
         temp["volatility"] = temp["pct_change"].rolling(20).std() * (252 ** 0.5)
-        risk_df.append({"member": member, "drawdown": float(temp["drawdown"].min()), "volatility": float(temp["volatility"].dropna().iloc[-1]) if not temp["volatility"].dropna().empty else 0.0})
+        risk_df.append({
+            "member": member,
+            "drawdown": float(temp["drawdown"].min()) if not temp["drawdown"].empty else 0.0,
+            "volatility": float(temp["volatility"].dropna().iloc[-1]) if not temp["volatility"].dropna().empty else 0.0,
+        })
 
     if risk_df:
         drawdown_df = pd.DataFrame(risk_df)
-        fig1 = px.bar(drawdown_df, x="member", y="drawdown", color="member", title="Max drawdown by member", template=plotly_template)
-        st.plotly_chart(fig1, use_container_width=True)
+        fig1 = px.bar(drawdown_df, x="member", y="drawdown", color="member", title="Max drawdown by member", labels={"member": "Member", "drawdown": "Drawdown (%)"}, template=plotly_template, color_discrete_map=MEMBER_COLORS)
+        fig1.update_layout(xaxis_title="Member", yaxis_title="Drawdown (%)")
+        st.plotly_chart(fig1, width="stretch")
+        st.caption("Largest decline from a prior peak in each member's account equity series.")
 
-        fig2 = px.bar(drawdown_df, x="member", y="volatility", color="member", title="Daily return volatility by member vs SPY", template=plotly_template)
-        st.plotly_chart(fig2, use_container_width=True)
+        fig2 = px.bar(drawdown_df, x="member", y="volatility", color="member", title="Daily return volatility by member vs SPY", labels={"member": "Member", "volatility": "Volatility"}, template=plotly_template, color_discrete_map=MEMBER_COLORS)
+        fig2.update_layout(xaxis_title="Member", yaxis_title="Annualized volatility")
+        st.plotly_chart(fig2, width="stretch")
+        st.caption("Annualized volatility based on daily returns in the member's equity history.")
 
     positions = load_team_position_data()
     high_beta_summary = []
+    sector_map = load_stock_sectors()
     for member, df in positions.items():
         if df.empty:
             continue
-        total_value = df["market_value"].sum() if "market_value" in df.columns else 0
-        high_beta_value = df[df["symbol"].isin(load_stock_sectors()[load_stock_sectors()["member"] == member]["symbol"].tolist())].sum() if not df.empty else 0
-        high_beta_summary.append({"member": member, "high_beta": high_beta_value, "core": total_value - high_beta_value})
+        numeric_cols = [c for c in ["market_value", "unrealized_pl", "qty", "avg_entry_price", "current_price", "unrealized_plpc"] if c in df.columns]
+        for col in numeric_cols:
+            df[col] = coerce_numeric_series(df[col])
+        total_value = float(df["market_value"].sum()) if "market_value" in df.columns else 0.0
+        beta_symbols = sector_map.loc[(sector_map["member"] == member) & (sector_map["high_beta"] == True), "symbol"].tolist()
+        high_beta_value = float(df.loc[df["symbol"].isin(beta_symbols), "market_value"].sum()) if not df.empty and beta_symbols else 0.0
+        high_beta_summary.append({
+            "member": member,
+            "high_beta": float(high_beta_value) if high_beta_value is not None else 0.0,
+            "core": float(total_value) - float(high_beta_value if high_beta_value is not None else 0.0),
+        })
     if high_beta_summary:
         high_beta_df = pd.DataFrame(high_beta_summary)
-        fig3 = px.bar(high_beta_df, x="member", y=["high_beta", "core"], barmode="group", title="High-beta vs core share per member", template=plotly_template)
-        st.plotly_chart(fig3, use_container_width=True)
+        fig3 = px.bar(high_beta_df, x="member", y=["high_beta", "core"], barmode="group", title="High-beta vs core share per member", labels={"value": "$", "member": "Member"}, template=plotly_template, color_discrete_map={"high_beta": "#DAA520", "core": "#7570B3"})
+        fig3.update_layout(xaxis_title="Member", yaxis_title="$ in portfolio")
+        st.plotly_chart(fig3, width="stretch")
+        st.caption("High-beta positions are those flagged as such in the team sector map; the rest are treated as core holdings.")
 
 
 def render_portfolios():
     positions = load_team_position_data()
     for member in MEMBERS:
         df = positions.get(member)
+        equity_exists = load_team_equity_data().get(member) is not None and not load_team_equity_data().get(member).empty
+        raw_positions = read_member_file(member, "positions")
+        fallback_path = TEAM_DIR / f"{member}_last_positions.csv"
+        fallback_used = (raw_positions is None or raw_positions.empty) and fallback_path.exists()
         if df is None or df.empty:
             st.subheader(member.title())
-            st.info("No data yet")
+            if equity_exists:
+                st.info("All in cash")
+            else:
+                st.info("No data yet")
             continue
         st.subheader(member.title())
         sector_map = load_stock_sectors()
         merged = df.merge(sector_map[["symbol", "sector"]], on="symbol", how="left")
+        if fallback_used:
+            try:
+                last_df = pd.read_csv(fallback_path)
+                if not last_df.empty and "as_of_date" in last_df.columns:
+                    as_of = pd.to_datetime(last_df["as_of_date"].dropna().iloc[0]).to_pydatetime()
+                    next_day = (as_of + pd.Timedelta(days=1)).strftime("%d %b")
+                    caption = f"Last positions held on {as_of.strftime('%d %b %Y')} - {member.title()} has been all in cash since {next_day}"
+                    st.caption(caption)
+            except Exception:
+                pass
         if "unrealized_pl" in merged.columns:
-            fig = px.bar(merged, x="symbol", y="unrealized_pl", color="symbol", title=f"{member.title()} current position P&L", template=plotly_template)
-            st.plotly_chart(fig, use_container_width=True)
+            fig = px.bar(merged, x="symbol", y="unrealized_pl", color="symbol", title=f"{member.title()} current position P&L", template=plotly_template, color_discrete_map={symbol: MEMBER_COLORS.get(member, "#7F8C8D") for symbol in merged["symbol"].unique()})
+            st.plotly_chart(fig, width="stretch")
+            if fallback_used:
+                st.caption(f"Last positions held on {as_of.strftime('%d %b %Y')} - {member.title()} has been all in cash since {next_day}")
         sectors = merged.groupby("sector", as_index=False)["market_value"].sum()
         if not sectors.empty:
             pie = px.pie(sectors, names="sector", values="market_value", title=f"{member.title()} sector allocation", template=plotly_template)
-            st.plotly_chart(pie, use_container_width=True)
-        st.dataframe(merged[["symbol", "qty", "market_value", "unrealized_pl", "sector"]], use_container_width=True)
+            st.plotly_chart(pie, width="stretch")
+            if fallback_used:
+                st.caption(f"Last positions held on {as_of.strftime('%d %b %Y')} - {member.title()} has been all in cash since {next_day}")
+        st.dataframe(merged[["symbol", "qty", "market_value", "unrealized_pl", "sector"]], width="stretch")
 
 
 def render_run_the_crew():
@@ -662,7 +895,7 @@ def render_run_the_crew():
     groq_key = st.sidebar.text_input("Groq API key", type="password", key="groq_key")
 
     st.sidebar.divider()
-    if st.sidebar.button("Test run", use_container_width=True):
+    if st.sidebar.button("Test run", width="stretch"):
         write_stock_file(stock_text)
         if not alpaca_key or not alpaca_secret or not groq_key:
             st.sidebar.warning("Enter all three API keys before running the crew.")
@@ -681,7 +914,7 @@ def render_run_the_crew():
 
     st.sidebar.write("")
     confirm_live = st.sidebar.checkbox("I confirm", key="confirm_live")
-    if st.sidebar.button("Run and place orders", type="primary", use_container_width=True):
+    if st.sidebar.button("Run and place orders", type="primary", width="stretch"):
         write_stock_file(stock_text)
         if not confirm_live:
             st.sidebar.warning("You must check 'I confirm' before placing live orders.")
@@ -743,7 +976,7 @@ def main():
         st.stop()
 
     entered = st.text_input("Enter password", type="password", key="app_password_entry")
-    if entered != APP_PASSWORD:
+    if entered.strip() != APP_PASSWORD:
         st.warning("Enter the correct password to access the dashboard.")
         st.stop()
 
