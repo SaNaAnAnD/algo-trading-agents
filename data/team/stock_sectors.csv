@@ -1,0 +1,31 @@
+member,symbol,sector,sector_etf,high_beta
+sana,TSLA,Consumer Discretionary,XLY,yes
+sana,AMD,Information Technology,XLK,yes
+sana,PLTR,Information Technology,XLK,yes
+sana,COIN,Financials,XLF,yes
+sana,MSFT,Information Technology,XLK,no
+sana,JPM,Financials,XLF,no
+sana,LLY,Health Care,XLV,no
+sana,XOM,Energy,XLE,no
+sana,COST,Consumer Staples,XLP,no
+sana,CAT,Industrials,XLI,no
+divisha,MU,Information Technology,XLK,yes
+divisha,XYZ,Financials,XLF,yes
+divisha,HOOD,Financials,XLF,yes
+divisha,SMCI,Information Technology,XLK,yes
+divisha,AVGO,Information Technology,XLK,no
+divisha,FCX,Materials,XLB,no
+divisha,AMZN,Consumer Discretionary,XLY,no
+divisha,GOOGL,Communication Services,XLC,no
+divisha,GE,Industrials,XLI,no
+divisha,V,Financials,XLF,no
+vani,NVDA,Information Technology,XLK,yes
+vani,APP,Information Technology,XLK,yes
+vani,UBER,Industrials,XLI,yes
+vani,ANET,Information Technology,XLK,yes
+vani,AAPL,Information Technology,XLK,no
+vani,META,Communication Services,XLC,no
+vani,JNJ,Health Care,XLV,no
+vani,HD,Consumer Discretionary,XLY,no
+vani,GS,Financials,XLF,no
+vani,NEE,Utilities,XLU,no
