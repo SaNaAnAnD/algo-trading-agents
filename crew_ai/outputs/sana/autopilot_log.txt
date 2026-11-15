@@ -1,0 +1,1194 @@
+13-10-2026 00:57:53 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+13-10-2026 00:58:06 IST  Server started
+13-10-2026 00:58:06 IST  ACCOUNT VALUE: $100,056.80 | CASH: $26,015.62
+13-10-2026 17:31:46 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+13-10-2026 17:31:58 IST  Server started
+13-10-2026 17:31:59 IST  ACCOUNT VALUE: $100,472.40 | CASH: $26,015.61
+13-10-2026 19:15:00 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_13102026-13-45/newsSentimentAgent13102026-13-45.md
+   saved outputs/run_13102026-13-45/technicalAnalystAgent13102026-13-45.md
+   saved outputs/run_13102026-13-45/marketDataAgent13102026-13-45.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ ac6662ef-7d5d-4636-a58f-6f78ee54abcc                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/a │
+│ c6662ef-7d5d-4636-a58f-6f78ee54abcc?access_code=TRACE-2808c3 │
+│ 6e74                                                         │
+│ 🔑 Access Code: TRACE-2808c36e74                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| MSFT | 88.0 | 100 | 80 | 100 | 100 | 74.7 | ADD | 0.2 |
+| XOM | 81.7 | 100 | 80 | 75 | 67 | 74.7 | ADD | 0.3 |
+| COST | 77.2 | 100 | 60 | 75 | 67 | 74.2 | HOLD | 0.5 |
+| PLTR | 72.7 | 100 | 60 | 50 | 67 | 72.2 | HOLD | 0.4 |
+| JPM | 70.9 | 75 | 80 | 100 | 34 | 74.3 | HOLD | -0.2 |
+| LLY | 70.9 | 75 | 80 | 50 | 34 | 54.5 | HOLD | 0.8 |
+| COIN | 40.9 | 25 | 60 | 25 | 34 | 50.5 | WAIT | 0.1 |
+| TSLA | 36.7 | 50 | 20 | 25 | 0 | 41.3 | WAIT | 0.6 |
+| AMD | 18.7 | 25 | 0 | 0 | 0 | 27.0 | WAIT | 0.5 |
+| CAT | 5.2 | 0 | 0 | 0 | 0 | 32.4 | WAIT | -0.3 |
+
+[4/5] No trades suggested this run.
+   saved outputs/run_13102026-13-45/traderAgent13102026-13-45.md
+   saved outputs/run_13102026-13-45/settings_used.md
+   saved outputs/run_13102026-13-45/executionLog.md
+13-10-2026 19:16:58 IST  Crew finished (code 0)
+13-10-2026 19:16:58 IST  ACCOUNT VALUE: $100,666.81 | CASH: $26,015.61
+13-10-2026 22:00:20 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_13102026-16-30/newsSentimentAgent13102026-16-30.md
+   saved outputs/run_13102026-16-30/technicalAnalystAgent13102026-16-30.md
+   saved outputs/run_13102026-16-30/marketDataAgent13102026-16-30.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ d4fd4d27-3c9c-426f-b778-282775069169                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/d │
+│ 4fd4d27-3c9c-426f-b778-282775069169?access_code=TRACE-f6bf7a │
+│ f01c                                                         │
+│ 🔑 Access Code: TRACE-f6bf7af01c                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| MSFT | 87.7 | 100 | 80 | 100 | 67 | 66.2 | ADD | 0.6 |
+| XOM | 84.2 | 100 | 80 | 75 | 100 | 69.9 | ADD | 0.2 |
+| COST | 83.2 | 100 | 80 | 75 | 67 | 65.6 | ADD | 0.5 |
+| PLTR | 67.1 | 100 | 40 | 75 | 34 | 61.7 | HOLD | 0.4 |
+| JPM | 64.9 | 75 | 80 | 75 | 34 | 59.2 | HOLD | -0.5 |
+| COIN | 53.2 | 25 | 80 | 25 | 67 | 54.7 | WAIT | 0.5 |
+| LLY | 45.7 | 50 | 20 | 75 | 0 | 44.5 | HOLD | 0.8 |
+| AMD | 40.1 | 25 | 60 | 0 | 34 | 44.5 | WAIT | 0.5 |
+| TSLA | 30.8 | 50 | 0 | 25 | 0 | 45.5 | WAIT | 0.6 |
+| CAT | 12.3 | 0 | 0 | 25 | 33 | 24.8 | WAIT | -0.3 |
+
+[4/5] No trades suggested this run.
+   saved outputs/run_13102026-16-30/traderAgent13102026-16-30.md
+   saved outputs/run_13102026-16-30/settings_used.md
+   saved outputs/run_13102026-16-30/executionLog.md
+13-10-2026 22:02:28 IST  Crew finished (code 0)
+13-10-2026 22:02:29 IST  ACCOUNT VALUE: $100,174.22 | CASH: $26,015.61
+14-10-2026 00:45:10 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_13102026-19-15/newsSentimentAgent13102026-19-15.md
+   saved outputs/run_13102026-19-15/technicalAnalystAgent13102026-19-15.md
+   saved outputs/run_13102026-19-15/marketDataAgent13102026-19-15.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 9b1794dc-06ef-406d-84d4-9ea4dc8fbbbf                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/9 │
+│ b1794dc-06ef-406d-84d4-9ea4dc8fbbbf?access_code=TRACE-cc4b4b │
+│ 463f                                                         │
+│ 🔑 Access Code: TRACE-cc4b4b463f                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| MSFT | 79.2 | 100 | 80 | 75 | 34 | 64.0 | HOLD | 0.4 |
+| XOM | 77.5 | 100 | 60 | 75 | 100 | 75.5 | HOLD | 0.1 |
+| PLTR | 73.1 | 100 | 60 | 75 | 34 | 60.4 | HOLD | 0.4 |
+| COST | 67.4 | 100 | 40 | 50 | 67 | 64.6 | HOLD | 0.5 |
+| COIN | 52.2 | 25 | 80 | 50 | 34 | 52.0 | WAIT | 0.3 |
+| JPM | 43.5 | 75 | 40 | 25 | 0 | 53.3 | HOLD | -0.3 |
+| AMD | 41.6 | 25 | 60 | 25 | 34 | 45.6 | WAIT | 0.2 |
+| LLY | 27.0 | 50 | 0 | 0 | 0 | 40.4 | SELL | 0.6 |
+| TSLA | 22.5 | 50 | 0 | 0 | 0 | 40.0 | WAIT | 0.0 |
+| CAT | 16.8 | 0 | 0 | 50 | 33 | 33.2 | WAIT | -0.2 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_13102026-19-15/riskManagerAgent13102026-19-15.md
+   saved outputs/run_13102026-19-15/traderAgent13102026-19-15.md
+
+[5/5] Final orders:
+[1/1] SELL 10 LLY @ limit 1156.18 (RAMS 27.0, stop-loss 1137.80) - stop-loss hit
+   OrderStatus.PENDING_NEW
+   saved outputs/run_13102026-19-15/settings_used.md
+   saved outputs/run_13102026-19-15/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 5973196f-d053-46e2-a19f-4621242ca43c                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/5 │
+│ 973196f-d053-46e2-a19f-4621242ca43c?access_code=TRACE-f10e69 │
+│ 1ad3                                                         │
+│ 🔑 Access Code: TRACE-f10e691ad3                             │
+╰──────────────────────────────────────────────────────────────╯
+14-10-2026 00:47:15 IST  Crew finished (code 0)
+14-10-2026 00:47:16 IST  ACCOUNT VALUE: $100,117.46 | CASH: $37,614.81
+14-10-2026 18:53:50 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+14-10-2026 18:54:02 IST  Server started
+14-10-2026 18:54:03 IST  ACCOUNT VALUE: $99,927.55 | CASH: $37,614.56
+14-10-2026 19:15:04 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_14102026-13-45/newsSentimentAgent14102026-13-45.md
+   saved outputs/run_14102026-13-45/technicalAnalystAgent14102026-13-45.md
+   saved outputs/run_14102026-13-45/marketDataAgent14102026-13-45.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 1e54230b-ec67-440e-a016-045cee037de2                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/1 │
+│ e54230b-ec67-440e-a016-045cee037de2?access_code=TRACE-007b95 │
+│ 0b84                                                         │
+│ 🔑 Access Code: TRACE-007b950b84                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 76.1 | 75 | 100 | 100 | 66 | 67.0 | BUY | 0.6 |
+| XOM | 75.3 | 100 | 60 | 75 | 100 | 76.7 | HOLD | -0.2 |
+| COST | 72.0 | 100 | 60 | 50 | 67 | 68.1 | HOLD | 0.3 |
+| PLTR | 69.4 | 100 | 60 | 50 | 34 | 59.0 | HOLD | 0.4 |
+| MSFT | 57.4 | 100 | 60 | 0 | 34 | 55.8 | HOLD | -0.2 |
+| COIN | 36.8 | 0 | 60 | 50 | 0 | 49.9 | WAIT | 0.5 |
+| AMD | 30.0 | 25 | 20 | 50 | 0 | 38.0 | WAIT | 0.2 |
+| JPM | 27.8 | 25 | 20 | 25 | 0 | 39.3 | SELL | 0.4 |
+| TSLA | 25.0 | 50 | 0 | 0 | 33 | 29.6 | WAIT | -0.1 |
+| CAT | 17.5 | 0 | 0 | 50 | 33 | 31.9 | WAIT | -0.1 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_14102026-13-45/riskManagerAgent14102026-13-45.md
+   saved outputs/run_14102026-13-45/traderAgent14102026-13-45.md
+
+[5/5] Final orders:
+[1/3] SELL 35 JPM @ limit 329.82 (RAMS 27.8, stop-loss 324.22) - RAMS 27.8 below sell level
+   OrderStatus.PENDING_NEW
+[2/3] SELL 34 XOM @ limit 174.40 (RAMS 75.3, stop-loss 172.49) - take half profit
+   OrderStatus.PENDING_NEW
+[3/3] BUY 9 LLY @ limit 1211.15 (RAMS 76.1, stop-loss 1178.23) - RAMS 76.1 above buy level
+   OrderStatus.PENDING_NEW
+   saved outputs/run_14102026-13-45/settings_used.md
+   saved outputs/run_14102026-13-45/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 6a589ac0-cc8e-45ec-a693-bb26ad893b13                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/6 │
+│ a589ac0-cc8e-45ec-a693-bb26ad893b13?access_code=TRACE-cacc6c │
+│ 12e3                                                         │
+│ 🔑 Access Code: TRACE-cacc6c12e3                             │
+╰──────────────────────────────────────────────────────────────╯
+14-10-2026 19:16:57 IST  Crew finished (code 0)
+14-10-2026 19:16:58 IST  ACCOUNT VALUE: $100,099.67 | CASH: $55,142.08
+14-10-2026 22:00:19 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_14102026-16-30/newsSentimentAgent14102026-16-30.md
+   saved outputs/run_14102026-16-30/technicalAnalystAgent14102026-16-30.md
+   saved outputs/run_14102026-16-30/marketDataAgent14102026-16-30.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 530ae905-c23d-44df-968c-5a32b5cd86c7                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/5 │
+│ 30ae905-c23d-44df-968c-5a32b5cd86c7?access_code=TRACE-93d1d0 │
+│ 912b                                                         │
+│ 🔑 Access Code: TRACE-93d1d0912b                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 86.5 | 75 | 100 | 100 | 100 | 67.4 | ADD | 0.2 |
+| XOM | 82.0 | 100 | 80 | 75 | 100 | 82.0 | ADD | -0.1 |
+| COST | 77.8 | 100 | 80 | 50 | 66 | 78.8 | HOLD | 0.3 |
+| JPM | 53.2 | 50 | 60 | 25 | 67 | 56.2 | WAIT | 0.3 |
+| PLTR | 39.8 | 75 | 0 | 50 | 0 | 44.8 | SELL | 0.3 |
+| AMD | 28.8 | 25 | 20 | 25 | 33 | 28.1 | WAIT | 0.1 |
+| MSFT | 26.2 | 50 | 20 | 0 | 0 | 44.1 | SELL | -0.3 |
+| TSLA | 21.3 | 25 | 0 | 25 | 33 | 31.6 | WAIT | -0.1 |
+| COIN | 17.6 | 0 | 0 | 25 | 33 | 35.6 | WAIT | 0.4 |
+| CAT | 13.8 | 0 | 0 | 25 | 33 | 23.9 | WAIT | -0.1 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_14102026-16-30/riskManagerAgent14102026-16-30.md
+   saved outputs/run_14102026-16-30/traderAgent14102026-16-30.md
+
+[5/5] Final orders:
+[1/4] SELL 22 MSFT @ limit 534.49 (RAMS 26.2, stop-loss 527.89) - RAMS 26.2 below sell level
+   OrderStatus.PENDING_NEW
+[2/4] SELL 72 PLTR @ limit 202.59 (RAMS 39.8, stop-loss 197.14) - RAMS 39.8 below sell level
+   OrderStatus.PENDING_NEW
+[3/4] SELL 6 COST @ limit 973.57 (RAMS 77.8, stop-loss 965.77) - take half profit
+   OrderStatus.PENDING_NEW
+[4/4] SELL 17 XOM @ limit 176.30 (RAMS 82.0, stop-loss 174.45) - take half profit
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 432e8def-0b8b-4548-8046-a99c6532c908                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/4 │
+│ 32e8def-0b8b-4548-8046-a99c6532c908?access_code=TRACE-3442c8 │
+│ dfda                                                         │
+│ 🔑 Access Code: TRACE-3442c8dfda                             │
+╰──────────────────────────────────────────────────────────────╯
+   OrderStatus.PENDING_NEW
+   saved outputs/run_14102026-16-30/settings_used.md
+   saved outputs/run_14102026-16-30/executionLog.md
+14-10-2026 22:03:02 IST  Crew finished (code 0)
+14-10-2026 22:03:03 IST  ACCOUNT VALUE: $99,843.96 | CASH: $79,538.18
+15-10-2026 00:45:04 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_14102026-19-15/newsSentimentAgent14102026-19-15.md
+   saved outputs/run_14102026-19-15/technicalAnalystAgent14102026-19-15.md
+   saved outputs/run_14102026-19-15/marketDataAgent14102026-19-15.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ e5b5b155-06fa-40d1-bc74-2bbea924ee82                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/e │
+│ 5b5b155-06fa-40d1-bc74-2bbea924ee82?access_code=TRACE-738d25 │
+│ 0503                                                         │
+│ 🔑 Access Code: TRACE-738d250503                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| COST | 79.0 | 100 | 60 | 75 | 100 | 74.1 | HOLD | 0.3 |
+| LLY | 76.4 | 75 | 80 | 75 | 100 | 66.2 | HOLD | 0.15 |
+| XOM | 67.8 | 100 | 60 | 50 | 67 | 81.3 | HOLD | -0.25 |
+| JPM | 42.4 | 50 | 40 | 25 | 34 | 53.9 | WAIT | 0.1 |
+| PLTR | 29.9 | 50 | 0 | 25 | 33 | 37.7 | WAIT | 0.05 |
+| MSFT | 24.6 | 50 | 0 | 0 | 33 | 38.8 | WAIT | -0.15 |
+| AMD | 24.3 | 25 | 0 | 50 | 33 | 28.7 | WAIT | -0.2 |
+| TSLA | 19.0 | 25 | 0 | 0 | 33 | 32.7 | WAIT | 0.1 |
+| CAT | 13.8 | 0 | 0 | 25 | 33 | 26.8 | WAIT | -0.1 |
+| COIN | 13.1 | 0 | 0 | 0 | 33 | 33.8 | WAIT | 0.3 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_14102026-19-15/riskManagerAgent14102026-19-15.md
+   saved outputs/run_14102026-19-15/traderAgent14102026-19-15.md
+
+[5/5] Final orders:
+[1/2] SELL 3 COST @ limit 972.63 (RAMS 79.0, stop-loss 965.03) - take half profit
+   OrderStatus.PENDING_NEW
+[2/2] SELL 9 XOM @ limit 176.62 (RAMS 67.8, stop-loss 174.97) - take half profit
+   OrderStatus.PENDING_NEW
+   saved outputs/run_14102026-19-15/settings_used.md
+   saved outputs/run_14102026-19-15/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 4e9b2b97-cfca-4bd3-aff5-0b1f1021284a                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/4 │
+│ e9b2b97-cfca-4bd3-aff5-0b1f1021284a?access_code=TRACE-f02030 │
+│ 95f4                                                         │
+│ 🔑 Access Code: TRACE-f0203095f4                             │
+╰──────────────────────────────────────────────────────────────╯
+15-10-2026 00:47:13 IST  Crew finished (code 0)
+15-10-2026 00:47:14 IST  ACCOUNT VALUE: $99,833.75 | CASH: $84,059.78
+15-10-2026 16:01:45 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+15-10-2026 16:01:57 IST  Server started
+15-10-2026 16:01:58 IST  ACCOUNT VALUE: $100,028.09 | CASH: $84,058.58
+15-10-2026 19:15:21 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_15102026-13-45/newsSentimentAgent15102026-13-45.md
+   saved outputs/run_15102026-13-45/technicalAnalystAgent15102026-13-45.md
+   saved outputs/run_15102026-13-45/marketDataAgent15102026-13-45.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 927dbcac-dd63-4df2-a5b7-bef984d81caf                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/9 │
+│ 27dbcac-dd63-4df2-a5b7-bef984d81caf?access_code=TRACE-5fdda1 │
+│ 3eeb                                                         │
+│ 🔑 Access Code: TRACE-5fdda13eeb                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 79.3 | 100 | 80 | 50 | 66 | 76.8 | HOLD | 0.5 |
+| COST | 73.8 | 100 | 80 | 100 | 66 | 84.6 | HOLD | 0.1 |
+| XOM | 67.9 | 100 | 60 | 75 | 34 | 74.6 | HOLD | -0.3 |
+| MSFT | 46.0 | 75 | 20 | 25 | 33 | 43.0 | WAIT | 0.4 |
+| PLTR | 35.6 | 50 | 0 | 50 | 33 | 31.4 | WAIT | 0.3 |
+| JPM | 30.3 | 25 | 20 | 50 | 33 | 48.6 | WAIT | -0.2 |
+| AMD | 23.5 | 25 | 0 | 50 | 33 | 20.5 | WAIT | -0.3 |
+| TSLA | 23.5 | 25 | 0 | 25 | 33 | 28.5 | WAIT | 0.2 |
+| COIN | 18.3 | 0 | 0 | 75 | 33 | 30.1 | WAIT | -0.5 |
+| CAT | 13.1 | 0 | 0 | 25 | 33 | 16.9 | WAIT | -0.2 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_15102026-13-45/riskManagerAgent15102026-13-45.md
+   saved outputs/run_15102026-13-45/traderAgent15102026-13-45.md
+
+[5/5] Final orders:
+[1/2] SELL 1 COST @ limit 994.74 (RAMS 73.8, stop-loss 982.48) - take half profit
+   OrderStatus.PENDING_NEW
+[2/2] SELL 4 XOM @ limit 176.05 (RAMS 67.9, stop-loss 174.06) - take half profit
+   OrderStatus.PENDING_NEW
+   saved outputs/run_15102026-13-45/settings_used.md
+   saved outputs/run_15102026-13-45/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ df76e4f0-2f43-4eeb-aff3-57aa6800eba6                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/d │
+│ f76e4f0-2f43-4eeb-aff3-57aa6800eba6?access_code=TRACE-d75139 │
+│ 755e                                                         │
+│ 🔑 Access Code: TRACE-d75139755e                             │
+╰──────────────────────────────────────────────────────────────╯
+15-10-2026 19:17:19 IST  Crew finished (code 0)
+15-10-2026 19:17:20 IST  ACCOUNT VALUE: $100,240.85 | CASH: $85,765.72
+15-10-2026 22:00:01 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_15102026-16-30/newsSentimentAgent15102026-16-30.md
+   saved outputs/run_15102026-16-30/technicalAnalystAgent15102026-16-30.md
+   saved outputs/run_15102026-16-30/marketDataAgent15102026-16-30.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 5740bebd-9ef2-4b6b-b1a8-6c65a6fe2ed3                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/5 │
+│ 740bebd-9ef2-4b6b-b1a8-6c65a6fe2ed3?access_code=TRACE-e7cb12 │
+│ aecf                                                         │
+│ 🔑 Access Code: TRACE-e7cb12aecf                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 91.0 | 100 | 80 | 100 | 100 | 81.4 | ADD | 0.6 |
+| COST | 77.2 | 100 | 60 | 100 | 67 | 67.9 | HOLD | 0.0 |
+| MSFT | 69.3 | 100 | 60 | 50 | 33 | 54.2 | WAIT | 0.4 |
+| XOM | 62.6 | 100 | 40 | 75 | 34 | 59.1 | HOLD | -0.2 |
+| COIN | 62.2 | 25 | 100 | 100 | 67 | 51.7 | WAIT | -0.6 |
+| JPM | 40.8 | 25 | 60 | 25 | 33 | 50.5 | WAIT | 0.1 |
+| PLTR | 40.8 | 50 | 0 | 75 | 33 | 41.3 | WAIT | 0.5 |
+| TSLA | 34.8 | 25 | 0 | 100 | 33 | 36.7 | WAIT | 0.2 |
+| AMD | 23.5 | 25 | 0 | 50 | 33 | 30.2 | WAIT | -0.3 |
+| CAT | 16.1 | 0 | 0 | 25 | 33 | 31.5 | WAIT | 0.2 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_15102026-16-30/riskManagerAgent15102026-16-30.md
+   saved outputs/run_15102026-16-30/traderAgent15102026-16-30.md
+
+[5/5] Final orders:
+[1/3] SELL 1 COST @ limit 986.58 (RAMS 77.2, stop-loss 973.11) - take half profit
+   OrderStatus.PENDING_NEW
+[2/3] SELL 4 LLY @ limit 1268.42 (RAMS 91.0, stop-loss 1241.43) - take half profit
+   OrderStatus.PENDING_NEW
+[3/3] SELL 2 XOM @ limit 174.56 (RAMS 62.6, stop-loss 172.49) - take half profit
+   OrderStatus.PENDING_NEW
+   saved outputs/run_15102026-16-30/settings_used.md
+   saved outputs/run_15102026-16-30/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ df9eccbc-d4aa-4d4b-aede-7736d11ca272                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/d │
+│ f9eccbc-d4aa-4d4b-aede-7736d11ca272?access_code=TRACE-02e7af │
+│ 8e65                                                         │
+│ 🔑 Access Code: TRACE-02e7af8e65                             │
+╰──────────────────────────────────────────────────────────────╯
+15-10-2026 22:02:49 IST  Crew finished (code 0)
+15-10-2026 22:02:52 IST  ACCOUNT VALUE: $100,417.33 | CASH: $92,194.95
+16-10-2026 00:45:13 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_15102026-19-15/newsSentimentAgent15102026-19-15.md
+   saved outputs/run_15102026-19-15/technicalAnalystAgent15102026-19-15.md
+   saved outputs/run_15102026-19-15/marketDataAgent15102026-19-15.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ d58f2102-2661-4067-b8b2-da444f49e5a2                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/d │
+│ 58f2102-2661-4067-b8b2-da444f49e5a2?access_code=TRACE-aea02a │
+│ cd3d                                                         │
+│ 🔑 Access Code: TRACE-aea02acd3d                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 82.0 | 100 | 60 | 75 | 100 | 78.8 | ADD | 0.7 |
+| COST | 75.0 | 100 | 60 | 75 | 67 | 62.5 | HOLD | 0.2 |
+| COIN | 62.5 | 25 | 100 | 75 | 100 | 59.3 | WAIT | -0.5 |
+| MSFT | 54.4 | 75 | 60 | 25 | 34 | 55.6 | WAIT | -0.1 |
+| XOM | 54.0 | 75 | 40 | 50 | 0 | 52.7 | HOLD | 0.6 |
+| JPM | 48.7 | 50 | 60 | 25 | 67 | 53.6 | WAIT | -0.3 |
+| PLTR | 37.8 | 50 | 0 | 50 | 33 | 44.8 | WAIT | 0.6 |
+| TSLA | 28.5 | 25 | 0 | 100 | 0 | 42.0 | WAIT | -0.2 |
+| AMD | 26.6 | 25 | 20 | 50 | 33 | 42.6 | WAIT | -0.7 |
+| CAT | 19.5 | 0 | 20 | 25 | 0 | 37.2 | WAIT | 0.3 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_15102026-19-15/riskManagerAgent15102026-19-15.md
+   saved outputs/run_15102026-19-15/traderAgent15102026-19-15.md
+
+[5/5] Final orders:
+[1/1] SELL 2 LLY @ limit 1261.90 (RAMS 82.0, stop-loss 1236.72) - take half profit
+   OrderStatus.PENDING_NEW
+   saved outputs/run_15102026-19-15/settings_used.md
+   saved outputs/run_15102026-19-15/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 1ae39909-dafe-4793-88b2-0b1e434118b6                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/1 │
+│ ae39909-dafe-4793-88b2-0b1e434118b6?access_code=TRACE-9bdc69 │
+│ eb57                                                         │
+│ 🔑 Access Code: TRACE-9bdc69eb57                             │
+╰──────────────────────────────────────────────────────────────╯
+16-10-2026 00:47:52 IST  Crew finished (code 0)
+16-10-2026 00:47:53 IST  ACCOUNT VALUE: $100,365.52 | CASH: $94,723.43
+16-10-2026 15:24:03 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+16-10-2026 15:24:15 IST  Server started
+16-10-2026 15:24:16 IST  ACCOUNT VALUE: $100,336.94 | CASH: $94,723.20
+16-10-2026 19:15:18 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_16102026-13-45/newsSentimentAgent16102026-13-45.md
+   saved outputs/run_16102026-13-45/technicalAnalystAgent16102026-13-45.md
+   saved outputs/run_16102026-13-45/marketDataAgent16102026-13-45.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ eb2c18c9-f195-48f0-8a31-4c6898c482a6                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/e │
+│ b2c18c9-f195-48f0-8a31-4c6898c482a6?access_code=TRACE-27c38a │
+│ 5fa7                                                         │
+│ 🔑 Access Code: TRACE-27c38a5fa7                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 78.3 | 100 | 60 | 50 | 100 | 71.1 | HOLD | 0.7 |
+| COST | 73.5 | 100 | 60 | 50 | 67 | 61.3 | HOLD | 0.5 |
+| TSLA | 66.4 | 50 | 80 | 100 | 34 | 52.1 | WAIT | 0.2 |
+| COIN | 60.0 | 25 | 80 | 100 | 67 | 54.3 | WAIT | -0.1 |
+| JPM | 55.1 | 50 | 100 | 50 | 66 | 68.6 | WAIT | -0.2 |
+| XOM | 55.1 | 100 | 40 | 25 | 34 | 62.9 | HOLD | -0.2 |
+| PLTR | 40.8 | 50 | 0 | 75 | 33 | 38.2 | WAIT | 0.5 |
+| MSFT | 35.2 | 50 | 20 | 25 | 0 | 49.0 | WAIT | 0.4 |
+| AMD | 33.3 | 25 | 20 | 75 | 33 | 35.8 | WAIT | -0.3 |
+| CAT | 26.2 | 0 | 40 | 50 | 0 | 40.1 | WAIT | -0.1 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_16102026-13-45/riskManagerAgent16102026-13-45.md
+   saved outputs/run_16102026-13-45/traderAgent16102026-13-45.md
+
+[5/5] Final orders:
+[1/2] SELL 1 LLY @ limit 1254.83 (RAMS 78.3, stop-loss 1227.34) - take half profit
+   OrderStatus.PENDING_NEW
+[2/2] SELL 1 XOM @ limit 175.33 (RAMS 55.1, stop-loss 173.15) - take half profit
+   OrderStatus.PENDING_NEW
+   saved outputs/run_16102026-13-45/settings_used.md
+   saved outputs/run_16102026-13-45/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 5fff7533-789f-47df-87cd-d63d932c527e                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/5 │
+│ fff7533-789f-47df-87cd-d63d932c527e?access_code=TRACE-82ac7d │
+│ 7ad0                                                         │
+│ 🔑 Access Code: TRACE-82ac7d7ad0                             │
+╰──────────────────────────────────────────────────────────────╯
+16-10-2026 19:17:29 IST  Crew finished (code 0)
+16-10-2026 19:17:30 IST  ACCOUNT VALUE: $100,357.52 | CASH: $96,158.06
+16-10-2026 22:00:11 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_16102026-16-30/newsSentimentAgent16102026-16-30.md
+   saved outputs/run_16102026-16-30/technicalAnalystAgent16102026-16-30.md
+   saved outputs/run_16102026-16-30/marketDataAgent16102026-16-30.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ ca714927-c1d2-4748-9a6a-22a1cfc78ac7                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/c │
+│ a714927-c1d2-4748-9a6a-22a1cfc78ac7?access_code=TRACE-28bb45 │
+│ 93a5                                                         │
+│ 🔑 Access Code: TRACE-28bb4593a5                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 81.7 | 100 | 80 | 50 | 67 | 68.5 | ADD | 0.8 |
+| XOM | 70.2 | 100 | 60 | 50 | 34 | 68.4 | HOLD | 0.5 |
+| JPM | 62.2 | 50 | 80 | 50 | 67 | 60.7 | WAIT | 0.2 |
+| COST | 59.6 | 100 | 40 | 25 | 34 | 64.2 | HOLD | 0.4 |
+| CAT | 38.2 | 0 | 60 | 75 | 0 | 38.2 | WAIT | 0.2 |
+| COIN | 37.2 | 0 | 40 | 75 | 34 | 49.3 | WAIT | 0.4 |
+| AMD | 36.0 | 25 | 60 | 50 | 0 | 35.2 | WAIT | -0.6 |
+| PLTR | 26.5 | 25 | 0 | 50 | 33 | 25.7 | WAIT | 0.1 |
+| TSLA | 26.3 | 25 | 20 | 25 | 0 | 38.9 | WAIT | 0.2 |
+| MSFT | 26.2 | 50 | 0 | 0 | 0 | 35.8 | WAIT | 0.5 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_16102026-16-30/riskManagerAgent16102026-16-30.md
+   saved outputs/run_16102026-16-30/traderAgent16102026-16-30.md
+
+[5/5] Final orders:
+[1/2] SELL 1 LLY @ limit 1259.44 (RAMS 81.7, stop-loss 1234.11) - take half profit
+   OrderStatus.PENDING_NEW
+[2/2] SELL 1 XOM @ limit 176.64 (RAMS 70.2, stop-loss 174.58) - take half profit
+   OrderStatus.PENDING_NEW
+   saved outputs/run_16102026-16-30/settings_used.md
+   saved outputs/run_16102026-16-30/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 5309fb65-016f-4865-b26b-ac87bf107b56                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/5 │
+│ 309fb65-016f-4865-b26b-ac87bf107b56?access_code=TRACE-33342a │
+│ fa83                                                         │
+│ 🔑 Access Code: TRACE-33342afa83                             │
+╰──────────────────────────────────────────────────────────────╯
+16-10-2026 22:02:33 IST  Crew finished (code 0)
+16-10-2026 22:02:33 IST  ACCOUNT VALUE: $100,372.28 | CASH: $97,597.19
+17-10-2026 00:45:15 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_16102026-19-15/newsSentimentAgent16102026-19-15.md
+   saved outputs/run_16102026-19-15/technicalAnalystAgent16102026-19-15.md
+   saved outputs/run_16102026-19-15/marketDataAgent16102026-19-15.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 11ede43f-5058-4dc7-b7db-ebcee66b0f5b                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/1 │
+│ 1ede43f-5058-4dc7-b7db-ebcee66b0f5b?access_code=TRACE-b96a21 │
+│ 9df7                                                         │
+│ 🔑 Access Code: TRACE-b96a219df7                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| XOM | 82.0 | 100 | 80 | 50 | 100 | 74.5 | ADD | 0.4 |
+| COST | 62.7 | 100 | 60 | 0 | 34 | 65.3 | HOLD | 0.5 |
+| LLY | 61.9 | 100 | 40 | 25 | 34 | 62.7 | HOLD | 0.7 |
+| JPM | 57.4 | 50 | 80 | 50 | 34 | 56.7 | WAIT | 0.0 |
+| CAT | 24.7 | 0 | 40 | 25 | 0 | 37.8 | WAIT | 0.2 |
+| MSFT | 18.3 | 25 | 0 | 0 | 33 | 34.3 | WAIT | 0.0 |
+| COIN | 16.8 | 0 | 0 | 50 | 33 | 39.3 | WAIT | -0.2 |
+| PLTR | 14.5 | 25 | 0 | 0 | 33 | 24.4 | WAIT | -0.5 |
+| AMD | 12.7 | 0 | 0 | 25 | 0 | 30.5 | WAIT | 0.2 |
+| TSLA | 12.3 | 0 | 0 | 25 | 33 | 36.3 | WAIT | -0.3 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_16102026-19-15/riskManagerAgent16102026-19-15.md
+   saved outputs/run_16102026-19-15/traderAgent16102026-19-15.md
+
+[5/5] Final orders:
+[1/1] BUY 66 XOM @ limit 179.22 (RAMS 82.0, stop-loss 176.23) - RAMS 82.0 strong and position in profit
+   OrderStatus.PENDING_NEW
+   saved outputs/run_16102026-19-15/settings_used.md
+   saved outputs/run_16102026-19-15/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 77e63dca-7892-42e2-929c-a78d552e35e4                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/7 │
+│ 7e63dca-7892-42e2-929c-a78d552e35e4?access_code=TRACE-91174f │
+│ 27a6                                                         │
+│ 🔑 Access Code: TRACE-91174f27a6                             │
+╰──────────────────────────────────────────────────────────────╯
+17-10-2026 00:47:57 IST  Crew finished (code 0)
+17-10-2026 00:47:58 IST  ACCOUNT VALUE: $100,362.73 | CASH: $85,808.24
+17-10-2026 11:05:48 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+17-10-2026 11:06:00 IST  Server started
+17-10-2026 11:06:00 IST  ACCOUNT VALUE: $100,389.50 | CASH: $85,808.24
+17-10-2026 19:15:02 IST  19:15: US market closed - skipping
+17-10-2026 22:00:03 IST  Could not check market clock: HTTPSConnectionPool(host='paper-api.alpaca.markets', port=443): Max retries exceeded with url: /v2/clock (Caused by NewConnectionError("HTTPSConnection(host='paper-api.alpaca.markets', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))
+17-10-2026 22:00:03 IST  22:00: US market closed - skipping
+18-10-2026 00:45:04 IST  00:45: US market closed - skipping
+19-10-2026 11:17:20 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+19-10-2026 11:17:32 IST  Server started
+19-10-2026 11:17:34 IST  ACCOUNT VALUE: $100,310.55 | CASH: $85,808.17
+19-10-2026 19:31:25 IST  Could not check market clock: HTTPSConnectionPool(host='paper-api.alpaca.markets', port=443): Read timed out. (read timeout=None)
+19-10-2026 19:31:25 IST  19:15: US market closed - skipping
+19-10-2026 21:59:13 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+19-10-2026 21:59:25 IST  Server started
+19-10-2026 21:59:27 IST  ACCOUNT VALUE: $100,309.35 | CASH: $85,808.17
+19-10-2026 22:00:10 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Start the server first: python servers/alpaca_trading_mcpServer.py
+MCP error: Error calling tool 'compute_rams': HTTPSConnectionPool(host='paper-api.alpaca.markets', port=443): Read timed out. (read timeout=None)
+   saved outputs/run_19102026-16-30/settings_used.md
+   saved outputs/run_19102026-16-30/executionLog.md
+19-10-2026 22:17:37 IST  Crew finished (code 0)
+19-10-2026 22:17:39 IST  ACCOUNT VALUE: $100,310.37 | CASH: $85,808.17
+20-10-2026 00:45:22 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_19102026-19-15/newsSentimentAgent19102026-19-15.md
+   saved outputs/run_19102026-19-15/technicalAnalystAgent19102026-19-15.md
+   saved outputs/run_19102026-19-15/marketDataAgent19102026-19-15.md
+[3/5] Final RAMS scores (technical + news)...
+Start the server first: python servers/alpaca_trading_mcpServer.py
+MCP error: Error calling tool 'compute_rams': ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+   saved outputs/run_19102026-19-15/settings_used.md
+   saved outputs/run_19102026-19-15/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 1dfc96dc-2974-4be5-ae41-1ce679b668e9                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/1 │
+│ dfc96dc-2974-4be5-ae41-1ce679b668e9?access_code=TRACE-79eb94 │
+│ a42a                                                         │
+│ 🔑 Access Code: TRACE-79eb94a42a                             │
+╰──────────────────────────────────────────────────────────────╯
+20-10-2026 00:47:28 IST  Crew finished (code 0)
+20-10-2026 00:47:30 IST  ACCOUNT VALUE: $100,362.75 | CASH: $85,808.17
+20-10-2026 22:56:31 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+20-10-2026 22:56:43 IST  Server started
+20-10-2026 22:56:44 IST  ACCOUNT VALUE: $100,286.73 | CASH: $85,808.17
+20-10-2026 22:56:44 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_20102026-17-26/newsSentimentAgent20102026-17-26.md
+   saved outputs/run_20102026-17-26/technicalAnalystAgent20102026-17-26.md
+   saved outputs/run_20102026-17-26/marketDataAgent20102026-17-26.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ e1db311e-9364-4b9e-95c8-e7fb116b166a                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/e │
+│ 1db311e-9364-4b9e-95c8-e7fb116b166a?access_code=TRACE-391dcf │
+│ b9db                                                         │
+│ 🔑 Access Code: TRACE-391dcfb9db                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 78.7 | 100 | 80 | 50 | 67 | 69.9 | HOLD | 0.4 |
+| TSLA | 75.3 | 75 | 80 | 50 | 100 | 61.3 | BUY | 0.5 |
+| COST | 64.9 | 100 | 60 | 25 | 34 | 59.6 | HOLD | 0.3 |
+| XOM | 57.7 | 75 | 40 | 75 | 0 | 51.8 | HOLD | 0.6 |
+| MSFT | 53.7 | 50 | 60 | 75 | 34 | 50.6 | WAIT | -0.2 |
+| PLTR | 33.4 | 50 | 40 | 0 | 34 | 49.3 | WAIT | -0.6 |
+| CAT | 30.3 | 0 | 60 | 0 | 33 | 41.5 | WAIT | 0.2 |
+| JPM | 28.5 | 25 | 20 | 25 | 0 | 47.3 | WAIT | 0.5 |
+| AMD | 22.9 | 0 | 20 | 0 | 34 | 44.2 | WAIT | 0.8 |
+| COIN | 15.0 | 0 | 20 | 25 | 0 | 46.3 | WAIT | -0.3 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_20102026-17-26/riskManagerAgent20102026-17-26.md
+   saved outputs/run_20102026-17-26/traderAgent20102026-17-26.md
+
+[5/5] Final orders:
+   None - no orders selected by the Trader.
+   saved outputs/run_20102026-17-26/settings_used.md
+   saved outputs/run_20102026-17-26/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ b4be3626-c7e5-4e69-8702-b3db7ee21000                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/b │
+│ 4be3626-c7e5-4e69-8702-b3db7ee21000?access_code=TRACE-220afc │
+│ 0daf                                                         │
+│ 🔑 Access Code: TRACE-220afc0daf                             │
+╰──────────────────────────────────────────────────────────────╯
+20-10-2026 22:58:34 IST  Crew finished (code 0)
+20-10-2026 22:58:34 IST  ACCOUNT VALUE: $100,284.77 | CASH: $85,808.17
+21-10-2026 00:45:15 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_20102026-19-15/newsSentimentAgent20102026-19-15.md
+   saved outputs/run_20102026-19-15/technicalAnalystAgent20102026-19-15.md
+   saved outputs/run_20102026-19-15/marketDataAgent20102026-19-15.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ f34aa90d-49ba-4152-be2a-83bc60fb3d4e                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/f │
+│ 34aa90d-49ba-4152-be2a-83bc60fb3d4e?access_code=TRACE-1fc347 │
+│ ff9b                                                         │
+│ 🔑 Access Code: TRACE-1fc347ff9b                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| TSLA | 76.0 | 75 | 80 | 50 | 100 | 62.0 | BUY | 0.6 |
+| LLY | 75.7 | 100 | 80 | 50 | 67 | 63.1 | HOLD | 0.0 |
+| XOM | 60.7 | 100 | 40 | 50 | 0 | 52.9 | HOLD | 0.5 |
+| COST | 59.6 | 100 | 40 | 25 | 34 | 58.2 | HOLD | 0.4 |
+| MSFT | 40.1 | 25 | 20 | 75 | 34 | 45.8 | WAIT | 0.6 |
+| CAT | 34.5 | 0 | 60 | 50 | 0 | 44.6 | WAIT | 0.2 |
+| PLTR | 22.9 | 25 | 20 | 25 | 34 | 46.1 | WAIT | -0.7 |
+| AMD | 19.5 | 0 | 20 | 0 | 0 | 43.6 | WAIT | 0.8 |
+| JPM | 15.7 | 25 | 0 | 0 | 0 | 46.9 | WAIT | 0.1 |
+| COIN | 9.8 | 0 | 0 | 0 | 0 | 42.8 | WAIT | 0.3 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_20102026-19-15/riskManagerAgent20102026-19-15.md
+   saved outputs/run_20102026-19-15/traderAgent20102026-19-15.md
+
+[5/5] Final orders:
+   None - no orders selected by the Trader.
+   saved outputs/run_20102026-19-15/settings_used.md
+   saved outputs/run_20102026-19-15/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 05b29816-a3e6-4be2-a6df-0ebea1798e41                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/0 │
+│ 5b29816-a3e6-4be2-a6df-0ebea1798e41?access_code=TRACE-ce0b51 │
+│ 4e04                                                         │
+│ 🔑 Access Code: TRACE-ce0b514e04                             │
+╰──────────────────────────────────────────────────────────────╯
+21-10-2026 00:47:11 IST  Crew finished (code 0)
+21-10-2026 00:47:12 IST  ACCOUNT VALUE: $100,302.41 | CASH: $85,808.17
+22-10-2026 19:55:52 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+22-10-2026 19:56:04 IST  Server started
+22-10-2026 19:56:05 IST  ACCOUNT VALUE: $100,272.44 | CASH: $85,808.17
+22-10-2026 19:56:06 IST  Running trading crew (automatic orders)...
+Traceback (most recent call last):
+  File "/home/sanaanand/trading_project/crew_ai/clients/trading_crew.py", line 28, in <module>
+    from fastmcp import Client
+ModuleNotFoundError: No module named 'fastmcp'
+22-10-2026 19:56:06 IST  Crew finished (code 1)
+22-10-2026 19:56:07 IST  ACCOUNT VALUE: $100,270.17 | CASH: $85,808.17
+22-10-2026 19:56:07 IST  Server had stopped - restarting
+22-10-2026 19:56:19 IST  Server started
+22-10-2026 19:56:39 IST  Server had stopped - restarting
+22-10-2026 19:56:51 IST  Server started
+22-10-2026 19:57:11 IST  Server had stopped - restarting
+22-10-2026 19:57:23 IST  Server started
+22-10-2026 19:57:43 IST  Server had stopped - restarting
+22-10-2026 19:58:16 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+22-10-2026 19:58:28 IST  Server started
+22-10-2026 19:58:29 IST  ACCOUNT VALUE: $100,301.05 | CASH: $85,808.17
+22-10-2026 19:58:30 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_22102026-14-28/newsSentimentAgent22102026-14-28.md
+   saved outputs/run_22102026-14-28/technicalAnalystAgent22102026-14-28.md
+   saved outputs/run_22102026-14-28/marketDataAgent22102026-14-28.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────────────────────────────────── Trace Batch Finalization ──────────────────────────────────────────────╮
+│ ✅ Trace batch finalized with session ID: 1c1adf97-c527-4fc4-bad8-0f0b6e676838                                       │
+│                                                                                                                      │
+│ 🔗 View here:                                                                                                        │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/1c1adf97-c527-4fc4-bad8-0f0b6e676838?access_code=TRACE-7a │
+│ d9758222                                                                                                             │
+│ 🔑 Access Code: TRACE-7ad9758222                                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 80.9 | 100 | 80 | 50 | 67 | 68.5 | ADD | 0.7 |
+| PLTR | 70.9 | 75 | 80 | 75 | 34 | 53.4 | WAIT | 0.3 |
+| COST | 70.8 | 100 | 80 | 75 | 66 | 75.4 | HOLD | 0.2 |
+| TSLA | 64.9 | 100 | 40 | 100 | 34 | 59.4 | WAIT | -0.4 |
+| COIN | 36.3 | 0 | 60 | 75 | 33 | 42.5 | WAIT | -0.5 |
+| XOM | 33.0 | 75 | 0 | 25 | 0 | 46.3 | SELL | -0.1 |
+| CAT | 27.3 | 0 | 20 | 50 | 33 | 32.2 | WAIT | 0.4 |
+| MSFT | 22.8 | 25 | 0 | 25 | 33 | 31.1 | WAIT | 0.1 |
+| AMD | 12.3 | 0 | 0 | 0 | 33 | 31.5 | WAIT | 0.2 |
+| JPM | 9.7 | 0 | 0 | 25 | 0 | 46.2 | WAIT | -0.2 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_22102026-14-28/riskManagerAgent22102026-14-28.md
+   saved outputs/run_22102026-14-28/traderAgent22102026-14-28.md
+
+[5/5] Final orders:
+[1/1] SELL 67 XOM @ limit 175.99 (RAMS 33.0, stop-loss 173.25) - RAMS 33.0 below sell level
+   OrderStatus.PENDING_NEW
+   saved outputs/run_22102026-14-28/settings_used.md
+   saved outputs/run_22102026-14-28/executionLog.md
+╭────────────────────────────────────────────── Trace Batch Finalization ──────────────────────────────────────────────╮
+│ ✅ Trace batch finalized with session ID: 71e6426c-c0bc-4860-a50c-4ea634ea3a2a                                       │
+│                                                                                                                      │
+│ 🔗 View here:                                                                                                        │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/71e6426c-c0bc-4860-a50c-4ea634ea3a2a?access_code=TRACE-62 │
+│ a033fbf6                                                                                                             │
+│ 🔑 Access Code: TRACE-62a033fbf6                                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+22-10-2026 20:00:44 IST  Crew finished (code 0)
+22-10-2026 20:00:45 IST  ACCOUNT VALUE: $100,271.56 | CASH: $85,808.17
+22-10-2026 22:00:06 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_22102026-16-30/newsSentimentAgent22102026-16-30.md
+   saved outputs/run_22102026-16-30/technicalAnalystAgent22102026-16-30.md
+   saved outputs/run_22102026-16-30/marketDataAgent22102026-16-30.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────────────────────────────────── Trace Batch Finalization ──────────────────────────────────────────────╮
+│ ✅ Trace batch finalized with session ID: 7e36cbc1-1653-4c6d-b76f-e2cf859bf76e                                       │
+│                                                                                                                      │
+│ 🔗 View here:                                                                                                        │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/7e36cbc1-1653-4c6d-b76f-e2cf859bf76e?access_code=TRACE-16 │
+│ cdea1757                                                                                                             │
+│ 🔑 Access Code: TRACE-16cdea1757                                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 84.2 | 100 | 80 | 50 | 100 | 71.7 | ADD | 0.7 |
+| COST | 83.8 | 100 | 80 | 75 | 66 | 76.5 | ADD | 0.6 |
+| PLTR | 77.2 | 75 | 80 | 75 | 67 | 54.5 | BUY | 0.7 |
+| TSLA | 57.7 | 75 | 40 | 75 | 0 | 51.3 | WAIT | 0.6 |
+| MSFT | 31.8 | 25 | 0 | 50 | 33 | 36.3 | WAIT | 0.8 |
+| JPM | 27.7 | 0 | 40 | 25 | 0 | 48.6 | WAIT | 0.6 |
+| XOM | 25.0 | 50 | 0 | 0 | 33 | 46.5 | WAIT | -0.1 |
+| COIN | 23.3 | 0 | 20 | 75 | 0 | 40.5 | WAIT | -0.2 |
+| CAT | 22.0 | 0 | 0 | 50 | 33 | 35.1 | WAIT | 0.5 |
+| AMD | 16.1 | 0 | 0 | 25 | 33 | 29.3 | WAIT | 0.2 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_22102026-16-30/riskManagerAgent22102026-16-30.md
+   saved outputs/run_22102026-16-30/traderAgent22102026-16-30.md
+
+[5/5] Final orders:
+[1/3] BUY 8 LLY @ limit 1320.93 (RAMS 84.2, stop-loss 1288.72) - RAMS 84.2 strong and position in profit
+   OrderStatus.PENDING_NEW
+[2/3] BUY 10 COST @ limit 1014.60 (RAMS 83.8, stop-loss 1000.64) - RAMS 83.8 strong and position in profit
+   OrderStatus.PENDING_NEW
+[3/3] BUY 40 PLTR @ limit 199.76 (RAMS 77.2, stop-loss 192.88) - RAMS 77.2 above buy level
+   OrderStatus.PENDING_NEW
+   saved outputs/run_22102026-16-30/settings_used.md
+   saved outputs/run_22102026-16-30/executionLog.md
+╭────────────────────────────────────────────── Trace Batch Finalization ──────────────────────────────────────────────╮
+│ ✅ Trace batch finalized with session ID: 8a629e3c-285e-4fd1-8572-23b9ed02d605                                       │
+│                                                                                                                      │
+│ 🔗 View here:                                                                                                        │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/8a629e3c-285e-4fd1-8572-23b9ed02d605?access_code=TRACE-02 │
+│ 9f8b49fc                                                                                                             │
+│ 🔑 Access Code: TRACE-029f8b49fc                                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+22-10-2026 22:02:50 IST  Crew finished (code 0)
+22-10-2026 22:02:50 IST  ACCOUNT VALUE: $100,273.51 | CASH: $69,001.79
+23-10-2026 00:45:12 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_22102026-19-15/newsSentimentAgent22102026-19-15.md
+   saved outputs/run_22102026-19-15/technicalAnalystAgent22102026-19-15.md
+   saved outputs/run_22102026-19-15/marketDataAgent22102026-19-15.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────────────────────────────────── Trace Batch Finalization ──────────────────────────────────────────────╮
+│ ✅ Trace batch finalized with session ID: 453b4b1a-b0ae-470c-86ad-be6c6117dbd5                                       │
+│                                                                                                                      │
+│ 🔗 View here:                                                                                                        │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/453b4b1a-b0ae-470c-86ad-be6c6117dbd5?access_code=TRACE-94 │
+│ 0e6ee654                                                                                                             │
+│ 🔑 Access Code: TRACE-940e6ee654                                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| LLY | 83.9 | 100 | 80 | 75 | 67 | 68.0 | ADD | 0.6 |
+| COST | 76.8 | 100 | 60 | 50 | 100 | 78.9 | HOLD | 0.5 |
+| XOM | 60.4 | 75 | 60 | 50 | 34 | 52.8 | WAIT | 0.2 |
+| TSLA | 40.5 | 50 | 20 | 50 | 0 | 48.5 | WAIT | 0.6 |
+| PLTR | 37.5 | 50 | 20 | 25 | 0 | 45.4 | SELL | 0.7 |
+| JPM | 36.8 | 0 | 60 | 50 | 0 | 48.6 | WAIT | 0.5 |
+| MSFT | 23.5 | 25 | 0 | 25 | 33 | 27.5 | WAIT | 0.2 |
+| CAT | 14.6 | 0 | 0 | 25 | 33 | 34.7 | WAIT | 0.0 |
+| COIN | 9.3 | 0 | 0 | 0 | 33 | 37.9 | WAIT | -0.2 |
+| AMD | 7.1 | 0 | 0 | 0 | 33 | 26.4 | WAIT | -0.5 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_22102026-19-15/riskManagerAgent22102026-19-15.md
+   saved outputs/run_22102026-19-15/traderAgent22102026-19-15.md
+
+[5/5] Final orders:
+[1/1] SELL 40 PLTR @ limit 195.24 (RAMS 37.5, stop-loss 189.74) - RAMS 37.5 below sell level
+   OrderStatus.PENDING_NEW
+   saved outputs/run_22102026-19-15/settings_used.md
+   saved outputs/run_22102026-19-15/executionLog.md
+╭────────────────────────────────────────────── Trace Batch Finalization ──────────────────────────────────────────────╮
+│ ✅ Trace batch finalized with session ID: 32c18f43-f0d7-4c78-adbf-f4882c716929                                       │
+│                                                                                                                      │
+│ 🔗 View here:                                                                                                        │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/32c18f43-f0d7-4c78-adbf-f4882c716929?access_code=TRACE-fe │
+│ 005b6a93                                                                                                             │
+│ 🔑 Access Code: TRACE-fe005b6a93                                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+23-10-2026 00:47:19 IST  Crew finished (code 0)
+23-10-2026 00:47:20 IST  ACCOUNT VALUE: $100,148.42 | CASH: $76,836.99
+23-10-2026 18:52:34 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+23-10-2026 18:52:46 IST  Server started
+23-10-2026 18:52:47 IST  ACCOUNT VALUE: $100,075.82 | CASH: $76,836.57
+23-10-2026 18:52:48 IST  Market closed - test run skipped
+23-10-2026 19:15:09 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_23102026-13-45/newsSentimentAgent23102026-13-45.md
+   saved outputs/run_23102026-13-45/technicalAnalystAgent23102026-13-45.md
+   saved outputs/run_23102026-13-45/marketDataAgent23102026-13-45.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 8553c82a-edc5-4633-aa0e-a7ba9efb5317                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/8 │
+│ 553c82a-edc5-4633-aa0e-a7ba9efb5317?access_code=TRACE-96e782 │
+│ 3b8a                                                         │
+│ 🔑 Access Code: TRACE-96e7823b8a                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| COST | 79.4 | 100 | 80 | 75 | 67 | 68.2 | HOLD | 0.0 |
+| XOM | 66.4 | 75 | 100 | 75 | 66 | 66.7 | WAIT | -0.2 |
+| LLY | 56.3 | 75 | 60 | 25 | 0 | 51.5 | HOLD | 0.6 |
+| MSFT | 29.5 | 25 | 0 | 50 | 33 | 23.0 | WAIT | 0.5 |
+| TSLA | 25.8 | 50 | 0 | 25 | 33 | 40.5 | WAIT | -0.5 |
+| JPM | 25.5 | 0 | 20 | 75 | 0 | 44.4 | WAIT | 0.1 |
+| PLTR | 25.5 | 25 | 0 | 50 | 0 | 37.5 | WAIT | 0.4 |
+| COIN | 22.1 | 0 | 20 | 50 | 33 | 40.9 | WAIT | -0.3 |
+| CAT | 15.3 | 0 | 0 | 50 | 33 | 30.9 | WAIT | -0.4 |
+| AMD | 13.1 | 0 | 0 | 25 | 33 | 35.0 | WAIT | -0.2 |
+
+[4/5] No trades suggested this run.
+   saved outputs/run_23102026-13-45/traderAgent23102026-13-45.md
+   saved outputs/run_23102026-13-45/settings_used.md
+   saved outputs/run_23102026-13-45/executionLog.md
+23-10-2026 19:18:13 IST  Crew finished (code 0)
+23-10-2026 19:18:14 IST  ACCOUNT VALUE: $99,910.66 | CASH: $76,836.57
+23-10-2026 22:00:16 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_23102026-16-30/newsSentimentAgent23102026-16-30.md
+   saved outputs/run_23102026-16-30/technicalAnalystAgent23102026-16-30.md
+   saved outputs/run_23102026-16-30/marketDataAgent23102026-16-30.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ b87fe91f-c26a-4d6f-9109-8ec3639b36d9                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/b │
+│ 87fe91f-c26a-4d6f-9109-8ec3639b36d9?access_code=TRACE-23b2a5 │
+│ 1d48                                                         │
+│ 🔑 Access Code: TRACE-23b2a51d48                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| XOM | 77.8 | 100 | 80 | 75 | 66 | 72.7 | BUY | -0.2 |
+| COST | 61.9 | 100 | 40 | 50 | 34 | 54.5 | HOLD | 0.2 |
+| PLTR | 28.5 | 25 | 20 | 25 | 0 | 45.9 | WAIT | 0.5 |
+| LLY | 28.4 | 50 | 0 | 0 | 33 | 47.8 | SELL | 0.35 |
+| JPM | 28.1 | 0 | 20 | 75 | 33 | 39.6 | WAIT | 0.0 |
+| TSLA | 26.5 | 50 | 0 | 25 | 33 | 43.5 | WAIT | -0.4 |
+| MSFT | 25.8 | 25 | 0 | 50 | 33 | 40.8 | WAIT | 0.0 |
+| CAT | 19.0 | 0 | 0 | 75 | 33 | 33.5 | WAIT | -0.4 |
+| AMD | 16.1 | 0 | 0 | 25 | 33 | 40.2 | WAIT | 0.2 |
+| COIN | 13.8 | 0 | 0 | 25 | 33 | 34.3 | WAIT | -0.1 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_23102026-16-30/riskManagerAgent23102026-16-30.md
+   saved outputs/run_23102026-16-30/traderAgent23102026-16-30.md
+
+[5/5] Final orders:
+   None - no orders selected by the Trader.
+   saved outputs/run_23102026-16-30/settings_used.md
+   saved outputs/run_23102026-16-30/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 1ca5c803-f45a-4cfa-ba12-137340c1ba08                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/1 │
+│ ca5c803-f45a-4cfa-ba12-137340c1ba08?access_code=TRACE-5e2aa6 │
+│ 63df                                                         │
+│ 🔑 Access Code: TRACE-5e2aa663df                             │
+╰──────────────────────────────────────────────────────────────╯
+23-10-2026 22:02:57 IST  Crew finished (code 0)
+23-10-2026 22:02:58 IST  ACCOUNT VALUE: $99,744.08 | CASH: $76,836.57
+24-10-2026 18:39:24 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+24-10-2026 18:39:36 IST  Server started
+24-10-2026 18:39:37 IST  ACCOUNT VALUE: $99,681.96 | CASH: $76,836.57
+24-10-2026 18:39:38 IST  Market closed - test run skipped
+26-10-2026 18:35:50 IST  Autopilot started. Will run at 19:15, 22:00, 00:45 IST on US market days.
+26-10-2026 18:36:02 IST  Server started
+26-10-2026 18:36:03 IST  ACCOUNT VALUE: $99,688.45 | CASH: $76,836.57
+26-10-2026 18:36:04 IST  Market closed - test run skipped
+26-10-2026 19:15:05 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_26102026-13-45/newsSentimentAgent26102026-13-45.md
+   saved outputs/run_26102026-13-45/technicalAnalystAgent26102026-13-45.md
+   saved outputs/run_26102026-13-45/marketDataAgent26102026-13-45.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 3e0a6cdc-4c10-403c-af01-600a9c6b76a0                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/3 │
+│ e0a6cdc-4c10-403c-af01-600a9c6b76a0?access_code=TRACE-7fc16b │
+│ 15dd                                                         │
+│ 🔑 Access Code: TRACE-7fc16b15dd                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| XOM | 88.7 | 100 | 80 | 100 | 100 | 69.0 | BUY | 0.3 |
+| TSLA | 68.2 | 75 | 100 | 0 | 67 | 66.1 | WAIT | 0.2 |
+| COST | 58.5 | 100 | 40 | 50 | 0 | 55.4 | HOLD | 0.2 |
+| LLY | 58.1 | 75 | 40 | 50 | 33 | 53.3 | HOLD | 0.7 |
+| JPM | 51.2 | 25 | 80 | 25 | 100 | 55.2 | WAIT | -0.2 |
+| AMD | 37.9 | 0 | 60 | 25 | 34 | 46.5 | WAIT | 0.7 |
+| MSFT | 35.3 | 25 | 40 | 25 | 0 | 40.2 | WAIT | 0.6 |
+| PLTR | 22.5 | 25 | 0 | 25 | 0 | 41.8 | WAIT | 0.5 |
+| CAT | 14.5 | 0 | 0 | 50 | 33 | 32.9 | WAIT | -0.5 |
+| COIN | 8.6 | 0 | 0 | 0 | 33 | 22.3 | WAIT | -0.3 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_26102026-13-45/riskManagerAgent26102026-13-45.md
+   saved outputs/run_26102026-13-45/traderAgent26102026-13-45.md
+
+[5/5] Final orders:
+[1/1] BUY 65 XOM @ limit 183.65 (RAMS 88.7, stop-loss 180.01) - RAMS 88.7 above buy level
+   OrderStatus.PENDING_NEW
+   saved outputs/run_26102026-13-45/settings_used.md
+   saved outputs/run_26102026-13-45/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 9453aca2-ac96-4435-bcc9-2052f5c30f4f                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/9 │
+│ 453aca2-ac96-4435-bcc9-2052f5c30f4f?access_code=TRACE-20a2dd │
+│ c501                                                         │
+│ 🔑 Access Code: TRACE-20a2ddc501                             │
+╰──────────────────────────────────────────────────────────────╯
+26-10-2026 19:17:07 IST  Crew finished (code 0)
+26-10-2026 19:17:07 IST  ACCOUNT VALUE: $99,807.82 | CASH: $64,935.07
+26-10-2026 22:00:18 IST  Alpaca not answering (clock, try 1/3): HTTPSConnectionPool(host='paper-api.alpaca.markets', port=443): Max retries exceeded with url: /v2/clock (Caused by NameResolutionError("HTTPSConnection(host='paper-api.alpaca.markets', port=443): Failed to resolve 'paper-api.alpaca.markets' ([Errno -3] Temporary failure in name resolution)"))
+26-10-2026 22:00:48 IST  Alpaca not answering (clock, try 2/3): HTTPSConnectionPool(host='paper-api.alpaca.markets', port=443): Max retries exceeded with url: /v2/clock (Caused by NameResolutionError("HTTPSConnection(host='paper-api.alpaca.markets', port=443): Failed to resolve 'paper-api.alpaca.markets' ([Errno -3] Temporary failure in name resolution)"))
+26-10-2026 22:01:18 IST  Alpaca not answering (clock, try 3/3): HTTPSConnectionPool(host='paper-api.alpaca.markets', port=443): Max retries exceeded with url: /v2/clock (Caused by NameResolutionError("HTTPSConnection(host='paper-api.alpaca.markets', port=443): Failed to resolve 'paper-api.alpaca.markets' ([Errno -3] Temporary failure in name resolution)"))
+26-10-2026 22:01:28 IST  Using US market hours instead: market open
+26-10-2026 22:01:28 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Start the server first: python servers/alpaca_trading_mcpServer.py
+MCP error: Error calling tool 'get_account_info': HTTPSConnectionPool(host='paper-api.alpaca.markets', port=443): Max retries exceeded with url: /v2/account (Caused by NameResolutionError("HTTPSConnection(host='paper-api.alpaca.markets', port=443): Failed to resolve 'paper-api.alpaca.markets' ([Errno -3] Temporary failure in name resolution)"))
+   saved outputs/run_26102026-16-31/settings_used.md
+   saved outputs/run_26102026-16-31/executionLog.md
+26-10-2026 22:02:17 IST  Crew finished (code 0)
+26-10-2026 22:02:37 IST  Alpaca not answering (account, try 1/3): HTTPSConnectionPool(host='paper-api.alpaca.markets', port=443): Max retries exceeded with url: /v2/account (Caused by NameResolutionError("HTTPSConnection(host='paper-api.alpaca.markets', port=443): Failed to resolve 'paper-api.alpaca.markets' ([Errno -3] Temporary failure in name resolution)"))
+26-10-2026 22:02:56 IST  ACCOUNT VALUE: $99,798.62 | CASH: $64,935.07
+27-10-2026 00:45:17 IST  Running trading crew (automatic orders)...
+
+[1/5] Fetching data for 10 stocks from the MCP server...
+Note: leaving position AAPL alone; it is not in my_stocks.txt.
+[2/5] News and Technical agents working in parallel...
+   saved outputs/run_26102026-19-15/newsSentimentAgent26102026-19-15.md
+   saved outputs/run_26102026-19-15/technicalAnalystAgent26102026-19-15.md
+   saved outputs/run_26102026-19-15/marketDataAgent26102026-19-15.md
+[3/5] Final RAMS scores (technical + news)...
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 3cc209e7-64f8-43c3-b430-477658805639                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/3 │
+│ cc209e7-64f8-43c3-b430-477658805639?access_code=TRACE-56e527 │
+│ 98b7                                                         │
+│ 🔑 Access Code: TRACE-56e52798b7                             │
+╰──────────────────────────────────────────────────────────────╯
+| Symbol | RAMS | Trend | Momentum | Volume | Breakout | RSI | Signal | News |
+|---|---|---|---|---|---|---|---|---|
+| TSLA | 78.2 | 100 | 80 | 50 | 100 | 65.2 | BUY | -0.1 |
+| XOM | 74.5 | 100 | 60 | 75 | 100 | 70.6 | HOLD | -0.3 |
+| MSFT | 73.8 | 50 | 80 | 75 | 100 | 60.4 | WAIT | 0.8 |
+| PLTR | 68.6 | 75 | 80 | 50 | 34 | 56.9 | WAIT | 0.5 |
+| AMD | 61.5 | 25 | 80 | 75 | 67 | 55.5 | WAIT | 0.6 |
+| LLY | 45.0 | 50 | 20 | 75 | 0 | 48.7 | HOLD | 0.7 |
+| JPM | 37.9 | 25 | 60 | 0 | 34 | 52.3 | WAIT | 0.2 |
+| COST | 33.8 | 75 | 0 | 25 | 0 | 45.3 | SELL | 0.0 |
+| CAT | 32.2 | 0 | 60 | 75 | 0 | 41.9 | WAIT | -0.6 |
+| COIN | 6.0 | 0 | 0 | 0 | 0 | 35.3 | WAIT | -0.2 |
+
+[4/5] Risk Manager and Trader reviewing the plan...
+   saved outputs/run_26102026-19-15/riskManagerAgent26102026-19-15.md
+   saved outputs/run_26102026-19-15/traderAgent26102026-19-15.md
+
+[5/5] Final orders:
+[1/2] SELL 9 LLY @ limit 1274.28 (RAMS 45.0, stop-loss 1253.59) - stop-loss hit
+   OrderStatus.PENDING_NEW
+[2/2] SELL 11 COST @ limit 997.22 (RAMS 33.8, stop-loss 990.04) - RAMS 33.8 below sell level
+   OrderStatus.PENDING_NEW
+   saved outputs/run_26102026-19-15/settings_used.md
+   saved outputs/run_26102026-19-15/executionLog.md
+╭────────────────── Trace Batch Finalization ──────────────────╮
+│ ✅ Trace batch finalized with session ID:                    │
+│ 350f2958-f168-4b4e-816d-6ad555e84587                         │
+│                                                              │
+│ 🔗 View here:                                                │
+│ https://app.crewai.com/crewai_plus/ephemeral_trace_batches/3 │
+│ 50f2958-f168-4b4e-816d-6ad555e84587?access_code=TRACE-c46e33 │
+│ c54b                                                         │
+│ 🔑 Access Code: TRACE-c46e33c54b                             │
+╰──────────────────────────────────────────────────────────────╯
+27-10-2026 00:47:23 IST  Crew finished (code 0)
+27-10-2026 00:47:23 IST  ACCOUNT VALUE: $99,748.99 | CASH: $87,410.29
