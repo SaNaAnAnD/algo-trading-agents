@@ -1,0 +1,27 @@
+flowchart TB
+    START["Trading crew run starts"] --> FETCH["Python orchestration<br/>loads watchlist, account, positions,<br/>open orders and market regime"]
+    FETCH --> PAR
+
+    subgraph PAR["Stage 1 — Research agents (parallel)"]
+        direction LR
+        N["News Sentiment Analyst<br/><br/>Input: latest headlines per ticker<br/>Output: JSON sentiment score<br/>from -1 (negative) to +1 (positive)"]
+        T["Technical Analyst<br/><br/>Input: technical indicators and<br/>initial RAMS pillar scores<br/>Output: strongest/weakest stocks<br/>and technical warnings"]
+    end
+
+    N --> NS["Validated news-score mapping<br/>(neutral score used if invalid)"]
+    T --> TA["Technical analysis report"]
+    NS --> FINAL["Python calls compute_rams()<br/>with news scores"]
+    TA --> M["Market Data Agent<br/><br/>Uses account + positions +<br/>news and technical reports<br/>Output: market summary"]
+    M --> FINAL
+
+    FINAL --> PLAN["Python trading-plan builder<br/><br/>Combines final RAMS, signals,<br/>positions, allocation and risk limits<br/>Produces numbered proposed orders"]
+    PLAN --> R["Risk Manager<br/><br/>Reviews each proposed order<br/>for bad news, overbought RSI,<br/>sector concentration and risk rules<br/>Output: approve/reject review"]
+    R --> P["Portfolio Manager and Trader<br/><br/>Receives risk review<br/>Selects only proposed order numbers<br/>Cannot invent new orders"]
+    P --> VALID["Python validates response<br/><br/>If AI response is unusable,<br/>rule-based approved plan is fallback;<br/>protective stop exits are retained"]
+    VALID --> EXEC["Execution layer"]
+    EXEC -->|dry-run| DRY["Log proposed orders only"]
+    EXEC -->|live paper execution enabled| MCP["MCP place_limit_order tool"]
+    MCP --> ALP["Alpaca Paper Trading"]
+    DRY --> SAVE["Save each agent report,<br/>settings and execution log"]
+    ALP --> SAVE
+    SAVE --> OUT["crew_ai/outputs/<trader_name>/"]
